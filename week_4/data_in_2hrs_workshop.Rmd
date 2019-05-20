@@ -1,0 +1,330 @@
+---
+title: "Data in 2 hours workshop"
+output:
+  html_document:
+    df_print: paged
+---
+# Data in 2 hours workshop
+
+## Overview
+In this workshop we are going to learn how to load, clean, and summarise data in R!
+
+Our goal is to understand which Boroughs of London have seen the greatest average house price increases over the last few years.
+
+## Importing the libraries
+
+In this case we are going to use the collection of packages called tidyverse. You can find the documentation of the tidyverse [here](www.tidyverse.org). This collection of packages are very important for data analysis and data science in general.
+The first step is to install the packages that we need. To do that we just need to type the following command
+`install.packages("tidyverse")`
+Once the packages are installed we need to import the packages that we are going to use in this notebook , to do that we are going to call the function `library`.
+
+We can import the whole set of tidyverse, however if we are going to use just a  couple of packages we can just pick the libraries that we want to load. In this case we are going to use three libraries from tidyverse: `ggplot2` to visualise; `tidyr` to tidy the data and `dplyr` to clean, group and summarise the data.
+
+In addition to the previous packages we are going to load data online, it is an excel file so we are going to use the package `readxl`. If you need to install a package you will need to use the following command `install.packages("readxl")`. If we are interested to use online data we are going to need extra help with the package `httr`.
+
+```{r}
+# Loading the packages that we need to use.  
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+library(readxl) #To read xls or xlsx files
+library(httr)
+library(tibble)
+library(lubridate)
+library(jsonlite)
+```
+
+# Reading the data from a website!
+To do that we are going to visit the website `https://data.london.gov.uk`. Let's navigate and found the dataset called UK house price index. Instead of downloading the data in your computer you can just copy the link to download. We can use that url to load data online! Isn't that great?
+
+# If you are restricted from reading the data from a website!
+If you work on this material from your workplace machine, unfortunately your network may prevent you from accessing the data through RStudio directly from a URL for security reasons. If this is the case, you can download the data from https://github.com/DecodedCo/data-fellowship/tree/master/data/introduction-to-data-workshop.zip, skip lines 43 to 50, and follow line 56. Remember to add the path of your file and specify the sheet name we are interested in, e.g. ("~/Downloads/UK House price index-v2.xls", sheet =3), for the function read_csv. 
+
+```{r}
+# Assign URL to an R object/variable
+# If we did this correctly the R object will show up in our Environment on the top right-hand side of R-Studio
+
+url_housepriceUK <- "https://data.london.gov.uk/download/uk-house-price-index/70ac0766-8902-4eb5-aab5-01951aaed773/UK%20House%20price%20index-v2.xls"
+
+# Get the data from the URL and store it in a temporary file called 'tf' on our machine
+# We should see 'tf' in our Environment 
+GET(url_housepriceUK, write_disk(tf <- tempfile(fileext = ".xls")))
+```
+
+
+
+Let's use read_xls to read our data into R!
+```{r}
+# Once the files are saved on our machine we need to load them into R using 'read_xls()' function
+# Let's create R object called 'houses' and read our downloaded spreadsheet into a data frame
+# Keep in mind we need to specify which sheet we want!
+houses <- read_xls(tf, sheet = 3)
+# Let's check the first 6 observations of the dataset.
+head(houses)
+```
+
+# Tidy data!
+
+# Tidying the data with tidyr
+
+```{r}
+# Let's check the dimensions first. To do that we are going to use the function 'dim()' which is going to return the number of rows and columns.
+dim(houses)
+```
+
+Probably the Boroughs and the other regions could be in the rows rather than be the columns. In that case we need to transpose the dataset. Let's find a function to do that!
+
+```{r}
+# To modify an existing R object, in our case our 'houses' data frame we need to override the existing version of it
+# 1. The name of the object we want to modify
+# 2. Use '<-' to assign
+# 3. Functions/transformations that we want to do
+
+# Let's transpose our data
+houses <- t(houses)
+
+# Transposing the dataset may (sometimes) change our data type, let's make sure our 'houses' dataset is a data frame
+houses  <- as.data.frame(houses)
+
+# Let's have a look at the first 6 rows again
+head(houses)
+```
+
+The only problem when you transpose a data-frame is that now we have the columns as the first row and a new columns which are meaningless. So the next step is to change that with the first row. Now let's replace the column 1 to something more meaningful like "ID"
+
+```{r}
+# Let's create a new R object for our column names called 'namescol'
+# Let's take the first row of our dataset and store it in namescol
+namescol <- as.vector(t(houses[1,])[,1])
+
+# Let's replace the column 1 to something more meaningful like "ID" 
+namescol[1] <- "ID"
+
+# We can use a function 'colnames()' that assigns column names to a data frame from a vector
+colnames(houses) <- namescol
+
+# The first column of the dataset is now meaningless and may even interfere with our analysis - it is a column name, not a data point!
+# Let's figure out how to remove it
+houses <-  houses[-1,]
+
+# First 6 rows again!
+head(houses, n = 6)
+```
+Ok it looks much better but we just transpose the dataset. Also as you can notice the names of the boroughs are part of the row names, which means that we need to include them in the dataset. To do that we are going to  
+```{r}
+# To make row names into a column we use the following function
+# We need to include a column name as one of the arguments, let's call it "Borough"
+
+houses <- rownames_to_column(houses, "Borough")
+
+# Let's have a look at our data again
+head(houses)
+```
+
+
+```{r}
+# The data is looking so much better! It's time to think about what it is we wanted to find out and make the transformations necessary to answer our question
+# It may be useful to transform the data so that we can compare price in different boroughs over time
+# Let's start with reshaping our data with function 'gather()' to have date and price as columns the data frame
+houses_clean <- gather(houses, key = "Date" , value = "Price" , -ID, -Borough)
+
+# Let's have a look at what this data looks like
+head(houses_clean)
+```
+```{r}
+# We may want to have a look at some basic statistics of this data, such as mean, median, minimum & maximum values
+# For that we call function 'summary()'
+
+summary(houses_clean)
+```
+ We need to drop the null values that do not contain information, if you see in the summary of ID there are some values with NA's
+
+```{r}
+# To remove all the NA's in the data frame we use a function 'drop_na()'
+houses_clean <- drop_na(houses_clean)
+
+# Let's see how the summary statistics have changed!
+summary(houses_clean)
+```
+ Now there is a problem with the data types of our dataset. 
+```{r}
+# To change data types we use 'as.*something*()' function
+# To select only one variable from the data frame we use write 'dataframe$variablename'
+# Let's see if we can transform 'Price' variable from character to numeric
+houses_clean$Price <- as.numeric(houses_clean$Price)
+
+# Let's check the summary statistics again
+summary(houses_clean)
+```
+
+ Now we need to transform the variable  "Date" to to a date type column.
+
+```{r}
+# Dates are a specific data type, we need to tell R that our Date variable is a date-time data type, to do that we use 'parse_date_time()' function
+houses_clean$Date  <-  parse_date_time(houses_clean$Date, "ymd")
+
+# Let's have a look at first 6 rows of our data again
+head(houses_clean)
+```
+
+```{r}
+# We are only really interested in price changes by year, as we have more than 20 years worth of data!
+# To look at the year by year changes in price we first need to create a new variable called 'Year' based on the 'Date' variable we already have
+# When adding a new variable to a data frame we use same logic as with creating R objects: 'object <- what’s_inside_object'
+# The only difference is we can add this new object to the data frame by "pretending" it's already there: 'dataframe$newvariable <- what’s_inside_variable'
+
+houses_clean$Year  <- year(houses_clean$Date)
+
+# Let's have a look at first 6 rows of our data again
+head(houses_clean)
+```
+```{r}
+# Let's check the summary statistics again
+summary(houses_clean)
+```
+
+# Visualising data
+```{r}
+# Humans are famously bad at extracting useful information just by looking at rows and columns of numbers, so let's visualise the data to see if we can spot any trends
+
+ggplot(houses_clean , aes(x = Date, y= Price))+geom_point()
+```
+
+```{r}
+# Let's colour the data points by borough
+ggplot(houses_clean , aes(x = Date, y= Price))+geom_point(aes(col=Borough))
+```
+
+
+```{r}
+# How about a different type of graph? Let's see what a line graph would look like
+ggplot(houses_clean, aes(x = Date, y= Price))+geom_line()
+```
+What can we see from these charts? Do they answer our question? Let's see if we can come up with a definitive answer.
+
+
+#Sub-setting
+Now it is time to subset the dataset to calculate the average price per year for each Borough. To do that we are going to use two functions the `group_by` and `summarise`.  
+
+```{r}
+# Let's create a grouping variable - we'd like to group by borough
+House_price_groupby <- group_by(houses_clean , Borough, Year)
+
+# Let's have a look at the LAST 6 rows
+tail(House_price_groupby)
+```
+
+```{r}
+dim(House_price_groupby)
+dim(houses_clean)
+```
+
+
+```{r}
+# To summarise price by borough, we use the grouping variable with 'summarise()' function (note that this different from 'summary()' we have been using so far!)
+House_price <-  summarise(House_price_groupby, Price_y = mean(Price))
+
+# Let's have look at 6 first rows!
+head(House_price)
+```
+
+Let's subset key years that we are interested, for example 1998, 2003, 2008, 2013, and 2018.
+
+To do that we are going to use the function `filter`
+```{r}
+# To select a specific rows in our datasets we specify the dataset and the filter parameter: i.e.'filter(data frame, varble=specific_value)
+# Let's do that for the years we're interested in
+data_1998 <-  filter(House_price, Year == 1998)
+data_1998
+```
+```{r}
+data_2003 <-  filter(House_price, Year == 2003)
+data_2003
+```
+```{r}
+data_2008 <-  filter(House_price, Year == 2008)
+data_2008
+```
+
+```{r}
+data_2013 <-  filter(House_price, Year == 2013)
+data_2013
+```
+
+```{r}
+data_2018 <-  filter(House_price, Year == 2018)
+data_2018
+```
+
+```{r}
+# Let's make a new data frame with just the years we are interested in
+# If we name this data frame 'data_final' we bind the subsets together using 'bind_rows()'
+
+data_final <-  bind_rows(data_1998, data_2003, data_2008, data_2013, data_2018)
+data_final
+```
+Remember we are interested in price change: a comparison between what the price is now and what it was 20 years ago
+```{r}
+
+# Let's start with looking at the price change in Kensington & Chelsea between 1998 and 2018
+# We begin with using 'filter()' to select only the information we're interested in
+
+y1998 <- filter(House_price, (Borough == "Kensington & Chelsea" & Year == 1998))
+y2018 <- filter(House_price, (Borough == "Kensington & Chelsea" & Year == 2018))
+
+print(y2018$Price_y / y1998$Price_y)
+```
+We have answered our original question 'How many times the average price of a house in Kensington & Chelsea increased in the last 20 years?' 
+
+Let's have a look if we can use the same logic to answer a broader question: 'Which Boroughs of London have seen the greatest average house price increases over the last few years?' 
+```{r}
+# To repeat the same analysis for every borough we could copy-paste the code we have in the previous chunk and replace the borough each time, but there are 33 boroughs, so to make our life easier we use for-loop to automate the process
+
+# Let's begin with storing all unique borough names into a R object
+boroughs <-  unique(data_final$Borough)
+
+# We want to end up with a neatly organised output, so let's create an empty data frame to store our results
+df <-  data.frame()
+
+# Let's create a loop that stores the price ratio for every borough into our empty data frame 'df'
+
+for (i in 1:length(boroughs))
+{
+  borough <-  boroughs[i]
+  y1998 <-  filter(House_price, (Borough == borough & Year == 1998))
+  y2018 <-  filter(House_price, (Borough == borough & Year == 2018))
+  df[i,1] <- borough
+  df[i,2] <- y2018$Price_y/y1998$Price_y
+}
+colnames(df) <-  c("Borough", "price_ratio")
+```
+
+
+To have a look at a whole R object we just type its name
+```{r}
+#Let's have a look at our 'df'
+df
+```
+
+
+```{r}
+# Let's make a top 10 of boroughs where the price has increased the most
+# To do that we use 'arrange()' to sort 'df' in descending order by 'price_ratio'
+# And let's store the top 10 rows into an R object called 'Top10'
+Top10 <- head(arrange(df, desc(price_ratio)), 10)
+
+# Let's have a look at our top 10!
+Top10
+```
+Ready to move to London?
+
+```{r}
+answer <- readline(prompt = "Ready to move to London?")
+
+print(answer)
+```
+
+```{r}
+pbinom(2,10,0.5)
+```
+
