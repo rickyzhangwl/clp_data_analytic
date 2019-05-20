@@ -1,0 +1,15 @@
+---
+title: "R_challenge_1"
+output: html_notebook
+---
+
+```{r}
+first <- as.integer(readline(prompt = "Please input the first integer: "))
+second <- as.integer(readline(prompt = "Please input the second integer: "))
+
+print(paste0("The sum of the two integers is : ", first + second))
+print(paste0("The difference of the two integers is : ", first - second))
+print(paste0("The product of the two integers is : ", first * second))
+print(paste0("The quotient of the two integers is : ", first / second))
+```
+

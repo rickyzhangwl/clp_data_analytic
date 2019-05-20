@@ -1,0 +1,60 @@
+---
+title: "Mushrooms"
+output: html_notebook
+---
+
+```{r}
+library(rpart)
+library(ggplot2)
+library(rpart.plot)
+```
+
+```{r}
+df <- read.csv("mushrooms.csv")
+
+head(df)
+
+summary(df)
+```
+
+```{r}
+ggplot(data = df, aes(odor, fill=class)) + geom_bar()
+```
+
+```{r}
+decisionTree <- rpart(class ~., df, method = "class")
+
+rpart.plot(decisionTree)
+```
+
+```{r}
+df$odor <- NULL
+
+decisionTree2 <- rpart(class ~., df, method = "class")
+
+rpart.plot(decisionTree2)
+```
+
+```{r}
+sample_size <- nrow(df)
+
+set.seed(100)
+
+trainingIdx <- sample(1:sample_size, 0.7*sample_size)
+trainingSet <- df[trainingIdx,]
+testingSet <- df[-trainingIdx,]
+```
+
+```{r}
+decisionTree3 <- rpart(class ~., trainingSet, method = "class")
+
+prediction <- predict(decisionTree3, testingSet, type = "class")
+```
+
+```{r}
+correct <- prediction == testingSet$class
+result <- data.frame(prediction, testingSet$class, correct)
+
+print(sum(result$correct) / nrow(testingSet))
+```
+

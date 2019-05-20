@@ -1,0 +1,33 @@
+---
+title: "R_challenge_4"
+output: html_notebook
+---
+**Challenge requirements**
+Create a program that does the following:
+
+1. Has a conversation with the user
+2. Stores information about the user - name, age, favourite colour, etc.
+3. Uses the information to calculate more facts about the user - calculate birth year from age, for example
+4. Responds to certain user inputs in different ways, such as agreeing that a specific colour is the best, but disliking others
+5. Tells the user everything it has learnt throughout the conversation
+
+```{r}
+# Has a conversation with the user
+name <- readline(prompt = "What's your name? ")
+
+age <- readline(prompt = "How old are you? ")
+
+height <- readline(prompt = "How tall are you? ")
+
+weight <- readline(prompt = "How much do you weigh? ")
+
+favor_color <- readline(prompt = "Which colour do you like best? ")
+```
+
+```{r}
+# Calculate the facts about the user
+current_year <- as.integer(format(Sys.Date(), "%Y"))
+birth_year <- current_year - age
+```
+
+

@@ -1,0 +1,42 @@
+---
+title: "R_challenge_3"
+output: html_notebook
+---
+# Challenge Requirements
+<!-- Create a program that does the following: -->
+<!-- Prints out "Rocket test: " and the current date and time -->
+<!-- Prompts the user to enter a positive number -->
+<!-- Counts down from the entered number to zero, outputting each number -->
+<!-- Outputs "Blast Off!" -->
+<!-- Outputs "Test completed: " and the current date and time -->
+
+```{r}
+# Print "Rocket test: " and the current date and time
+print(paste("Rocket test:", Sys.time()))
+```
+```{r}
+# Prompts the user to enter a positive number
+pn <- as.integer(readline(prompt = "Please enter a positive number: "))
+
+# Counts down from the entered number to zero, outputting each number
+while (pn >= 0)
+{
+  print(pn)
+  pn = pn - 1
+}
+
+pn2 <- as.integer(readline(prompt = "Please enter a positive number: "))
+
+# Alternative method
+for (i in pn2:0){
+  print(i)
+}
+
+print("Blast Off!")
+```
+
+```{r}
+# Print "Test completed: " and the current date and time
+print(paste("Test completed: ", Sys.time()))
+```
+

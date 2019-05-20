@@ -1,0 +1,23 @@
+---
+title: "R_challenge_2"
+output: html_notebook
+---
+```{r}
+str1 <- readline(prompt = "Please input first string: ")
+str2 <- readline(prompt = "Please input second string: ")
+str3 <- readline(prompt = "Please input third string: ")
+
+lengthVector <- c(nchar(str1), nchar(str2), nchar(str3))
+
+print(lengthVector)
+
+cat(lengthVector[1], substr(str1, 1, 3))
+cat(lengthVector[2], substr(str2, 1, 3))
+cat(lengthVector[3], substr(str3, 1, 3))
+```
+
+```{r}
+i <- seq(1, 2, length.out = 7)
+print(i)
+```
+

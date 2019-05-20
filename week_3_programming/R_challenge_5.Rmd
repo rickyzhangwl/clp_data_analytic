@@ -1,0 +1,75 @@
+---
+title: "R_challenge_5"
+output: html_notebook
+---
+
+# Challenge requirements
+1. In no more than 3 lines of code, write instructions for a turtle to draw a triangle
+2. Use a turtle to draw a square next to a triangle. The shapes should not touch or be connected
+3. Write a function that tells a turtle to draw a square of a user-inputted size
+4. Write a function that tells a turtle to draw a shape with a given number of sides
+
+```{r}
+# Load package
+library(TurtleGraphics)
+```
+```{r}
+# Initiate the turtle
+turtle_init()
+turtle_left(angle = 90)
+
+# In no more than 3 lines of code, write instructions for a turtle to draw a triangle
+for (i in 1:3) {
+  turtle_forward(dist = 10)
+  turtle_right(angle = 120)
+}
+
+# Use a turtle to draw a square next to a triangle. The shapes should not touch or be connected
+
+# Disable the trace
+turtle_up()
+# Set the start point of square drawing
+turtle_left(angle = 180)
+turtle_move(dist = 10, direction = "forward")
+# Display the trace
+turtle_down()
+# Draw the square
+for (i in 1:4) {
+  turtle_forward(dist = 10)
+  turtle_left(angle = 90)
+}
+
+```
+
+```{r}
+# Write a function that tells a turtle to draw a square of a user-inputted size
+turtle_square <- function(l) {
+  for (i in 1:4) {
+    turtle_forward(dist = l)
+    turtle_left(angle = 90)
+  }
+}
+
+# Test the draw-square function
+turtle_init()
+turtle_square(15)
+
+```
+
+```{r}
+# Write a function that tells a turtle to draw a shape with a given number of sides
+turtle_polygon <- function(sl, side) { # sl for side length
+  for (i in 1:side) {
+    turtle_forward(dist = sl)
+    turtle_left(angle = 360 / side)
+  }
+} 
+
+# Test the function
+turtle_init()
+turtle_hide() # use turtle_hide() to disable displaying turtle's image to speed up drawing
+turtle_polygon(5, 8)
+```
+
+
+
