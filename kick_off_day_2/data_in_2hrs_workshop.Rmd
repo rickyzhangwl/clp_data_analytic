@@ -24,14 +24,17 @@ In addition to the previous packages we are going to load data online, it is an 
 
 ```{r}
 # Loading the packages that we need to use.  
-library(ggplot2)
-library(tidyr)
-library(dplyr)
-library(readxl) #To read xls or xlsx files
-library(httr)
-library(tibble)
-library(lubridate)
-library(jsonlite)
+library(ggplot2) # for visualization
+library(tidyr) # for data cleaning
+library(dplyr) # for data manipulating
+library(tibble) # data type defining
+library(readxl) # To read xls or xlsx files
+library(httr) # for working with URL and HTTP
+library(lubridate) # to parse datatime
+library(jsonlite) # to read json file
+
+# we can use tidyverse package to replace the first 4 packages
+#library(tidyverse)
 ```
 
 # Reading the data from a website!

@@ -1,0 +1,57 @@
+---
+title: "day2_recap"
+#output: html_notebook
+---
+## Overview
+In this workshop we are going to learn how to load, clean, and summarise data in R!
+
+Our goal is to understand which Boroughs of London have seen the greatest average house price increases over the last few years.
+
+## Importing packages
+```{r}
+library(tidyverse) # data manipulating
+library(readxl) # read excel file
+library(lubridate) # work with datatime
+library(jsonlite) # work with json file
+library(httr) # work with URL and HTTP
+```
+
+## Read data from website
+```{r}
+# Assign url tp R variable
+url_houseprice <- "https://data.london.gov.uk/download/uk-house-price-index/70ac0766-8902-4eb5-aab5-01951aaed773/UK%20House%20price%20index-v2.xls"
+
+# Get data from URL and store it to temporary file
+GET(url_houseprice, write_disk(tf <- tempfile(fileext = ".xls")))
+
+# Read data into R
+house_price <- read_xls(tf, sheet = 3)
+
+# Check the first 5 rows
+head(house_price)
+```
+
+## Data Cleaning
+```{r}
+# Transpose data so that first row is borough name
+house_price <- t(house_price)
+house_price <- as.data.frame(house_price)
+
+# Check the first 5 rows again
+head(house_price)
+```
+
+The first row is the date information, so we need to set the first row as the headers
+
+```{r}
+namescol <- as.vector(t(house_price[1,])[,1])
+namescol[1] <- "ID"
+colnames(house_price) <- namescol
+
+house_price <- house_price[-1,]
+
+head(house_price)
+```
+
+
+
