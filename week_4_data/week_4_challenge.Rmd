@@ -1,0 +1,348 @@
+---
+title: "Week4_Challenge"
+output: pdf_document
+---
+
+This notebook is to complete the challenge of `Week 4 Data`.
+
+### Goal of the module
+By the end of this module, you will have loaded, cleaned and analysed different datasets using R.
+
+### Learning Objectives
+- I understand different data structures
+- I am able to load different types of files in R
+- I know the difference between .csv, .xlxs, .tsv and .json files
+- I can evaluate and solve the different problems of "dirty" data
+- I can prepare visual and analytical data analysis
+- I am able to filter datasets base on columns and row
+
+### Create a section to load revelant packages
+```{r}
+library(tidyverse) # data manipulation
+library(readxl) # read xls file
+library(httr) # work with URL and HTTP
+library(gdata) # data manipulation
+library(jsonlite) # work with json file
+library(stringr) # work with strings
+library(GGally) # extension of ggplot2
+```
+
+## Loading data
+```{r}
+# use read.csv() to load data and store it to a variable
+happiness <- read.csv("data/introduction_to_data/happiness.csv")
+
+# check first 7 rows
+head(happiness, 7)
+```
+
+```{r}
+# use read_excel() to load data and store it to a variable
+df_xlsx <- read_excel("data/introduction_to_data/happiness.xlsx")
+
+# check the last 7 rows
+tail(df_xlsx, 7)
+
+# check dimension
+dim(df_xlsx)
+```
+
+```{r}
+# use read.table() to load data and store it to a variable
+df_tsv <- read.table(file = "data/introduction_to_data/happiness.tsv", header = TRUE, sep = "\t")
+
+# check the first a few rows
+head(df_tsv)
+```
+
+```{r}
+# use fromJSON() to load data and store it to a variable
+df_json <- fromJSON("data/introduction_to_data/grades.json")
+df_json <- df_json$data
+
+# check the last 6 rows
+tail(df_json)
+```
+
+```{r}
+# load GapMinder data
+df_gm <- read_excel("data/introduction_to_data/gap_minder.xlsx", sheet = 1, )
+
+# check first 6 elements
+head(df_gm)
+```
+
+## Cleaning Data
+### Cleaning Data for `happiness` database
+```{r}
+# check first 6 elements
+head(happiness)
+
+# replace column names
+names(happiness) <- c('Country', 'Region', 'Hemisphere', 'HappinessScore', 'HDI', 'GDP_PerCapita', 'Beer_PerCapita', 'Spirit_PerCapita', 'Wine_PerCapita')
+
+# check first 6 elements again
+head(happiness)
+```
+
+```{r}
+# check the data type of all variables with a single line of code
+str(happiness)
+
+# Alternative method
+sapply(happiness, class)
+```
+
+```{r}
+# replace commas in columns "HappinessScore" and "GDP_PerCapita" and change their data types to numeric
+happiness$HappinessScore <- as.numeric(gsub(",", ".", happiness$HappinessScore))
+happiness$GDP_PerCapita <- as.numeric(gsub(",", ".", happiness$GDP_PerCapita))
+
+# check the first 6 elements to confirm the result
+head(happiness)
+```
+
+```{r}
+# correct typos and multiple categories of "Hemisphere" so that it only contains `north`, `south` and `both`
+unique(happiness$Hemisphere)
+
+# replace the typos and other categories to required words
+happiness$Hemisphere <- gsub("^[Ss]\\w*", "south", happiness$Hemisphere, ignore.case = TRUE)
+happiness$Hemisphere <- gsub("^[Nn]\\w*", "north", happiness$Hemisphere, ignore.case = TRUE)
+
+# check the unique values of Hemisphere column again
+unique(happiness$Hemisphere)
+
+```
+
+```{r}
+# check the first 6 rows of the cleaned data
+head(happiness)
+
+```
+
+### Cleaning Data for `gapminder_data` databse
+```{r}
+# check the data
+head(df_gm)
+
+```
+
+```{r}
+# Change the name of the variable 'Total 25-54 unemployment (%)' to "Country"
+names(df_gm)[1] <- "Country"
+
+```
+
+```{r}
+# "Unpivot" the database gapminder_data, so each observation will be described by three variables: Country, Year, Unemployment.
+gmd_melt <- gather(df_gm, key = "Year", value = "Umemployment", -Country)
+
+# check melted dataframe
+head(gmd_melt)
+```
+
+```{r}
+# Change the format of the variable Year to numeric
+gmd_melt$Year <- as.numeric(gmd_melt$Year)
+
+# check result
+head(gmd_melt)
+```
+
+```{r}
+# Drop any row that contains a NaN value using the function .dropna. Save that file into gdm_noNa
+gdm_noNa <- drop_na(gmd_melt)
+
+# check if it worked
+head(gdm_noNa)
+```
+
+```{r}
+# Check out how many elements you dropped using the function .shape
+drop_row <- dim(gmd_melt)[1] - dim(gdm_noNa)[1]
+
+print(drop_row)
+```
+
+## 4. Summarising Data
+```{r}
+# Count how many observations are in the happiness dataset using the function length(); save that number in a variable called totalCounts
+totalCounts <- length(happiness)
+
+
+# Calculate the sum of all the Happiness score for all countries, save that value in a variable called summation
+summation <- sum(happiness$HappinessScore)
+
+
+# Calculate the mean with the two numbers above
+mean(totalCounts, summation)
+
+
+# Calculate the arithmetic mean and the median of HappinessScore
+hs_mean <- mean(happiness$HappinessScore)
+print(paste("The arithmetic mean of HappinessScore is: ", hs_mean))
+
+hs_median <- median(happiness$HappinessScore)
+print(paste("The arithmetic median of HappinessScore is: ", hs_median))
+
+
+# Calculate the variance, the standard deviation and the interquartile range of HappinessScore
+hs_var <- var(happiness$HappinessScore)
+print(paste("The variance of HappinessScore is: ", hs_var))
+
+hs_std <- sd(happiness$HappinessScore)
+print(paste("The standard deviation of HappinessScore is: ", hs_std))
+
+hs_iqr <- IQR(happiness$HappinessScore)
+print(paste("The interquartile of HappinessScore is: ", hs_iqr))
+
+
+# Calculate the maximum and the minimum value of HappinessScore
+hs_max <- max(happiness$HappinessScore)
+print(paste("The maximum value of HappinessScore is: ", hs_max))
+
+hs_min <- min(happiness$HappinessScore)
+print(paste("The minimum value of HappinessScore is: ", hs_min))
+cat("\n")
+
+
+# In a single line of code, calculate the mean of all the numeric variables
+print("The mean of numeric variables are as below:")
+print(sapply(happiness[,4:9], mean, na.rm = TRUE))
+cat("\n")
+
+
+# In a single line of code calculate: (a) minimum value, (b) Q1, (c) median, (d) mean, (e) Q3, (f) maximum value.
+summary(happiness)
+
+```
+
+```{r}
+# Pivot a table to know the average value of all the numeric variables based on (a) Hemisphere and (b) Region. Save the results in `hemisfere` and `region`, respectively
+# group data by hemisphere
+gb_hemisphere <- group_by(happiness, Hemisphere)
+
+# summarise the mean of numeric columns for all hemispheres
+hemisphere <- summarise_if(gb_hemisphere, is.numeric, mean)
+hemisphere
+```
+
+```{r}
+# group data by region
+gb_region <- group_by(happiness, Region)
+
+# summarise the mean of numeric columns for all regions 
+region <- summarise_if(gb_region, is.numeric, mean)
+region
+```
+
+
+## 5. Data Visualisation
+```{r}
+# Create a vertical boxplot of all the HappinessScore variable from the dataset happiness, set the title of the the plot to Global Happiness Score, change the y axis to Happiness Score
+boxplot(happiness$HappinessScore, main = "Global Happiness Score", ylab = "Happiness Score")
+
+```
+
+```{r}
+# Create a vertical boxplot of all the alcohol consumption variables from the dataset happiness, set the title of the the plot to Country Alcohol Consumption, change the y axis to Litres per capita (l), and change the labels of the x axis to Beer, Spirits, Wine.
+df <- gather(happiness, key = "Category", value = "Consumption", -c(Country, Region, Hemisphere))
+df <- filter(df, df$Category == "Beer_PerCapita" | df$Category == "Spirit_PerCapita" | df$Category == "Wine_PerCapita")
+```
+
+```{r}
+boxplot(Consumption~Category, df, main = "Country Alcohol Consumption", ylab = "Litres per capita (l)", xaxt = "n")
+axis(1, at = 1:3, labels = c("Beer", "Spirits", "Wine"))
+
+```
+```{r}
+# Create a horizontal boxplot of HappinessScore, separated by Hemispheres. Make the title Happiness Score in each hemisphere; change the labels in the y axis to north, both, and south. Change the labels in the x axis to Happiness Score
+boxplot(HappinessScore~Hemisphere, happiness, horizontal = TRUE, main = "Happiness Score in Each Hemisphere", xlab = "Happiness Score", ylab = "Hemisphere")
+
+```
+
+```{r}
+# Create a vertical violin plot of GDP_PerCapita, separated by Region, change the title and the labels accordingly
+# draw the violin chart and fill in each region with color
+p <- ggplot(happiness, aes(x = Region, y = GDP_PerCapita)) + geom_violin(scale = "width", aes(fill = Region)) + ggtitle("GDP Per Capita in Each Region")
+
+# Rotate the x-tick labels and remove legend
+p + theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
+
+
+```
+
+```{r}
+# Create a scatter plot between HappinessScore (dependent variable) and Wine_PerCapita (independent variable)
+ggplot(happiness, aes(x = Wine_PerCapita, y = HappinessScore, color = Hemisphere),
+       main = "Wine Per Capita vs Happiness Score",
+       xlab = " Wine Per Capita",
+       ylab = "Happiness Score") + geom_point()
+```
+
+```{r}
+# Check out the distribution of HappinessScore using a histogram
+ggplot(happiness, aes(x = HappinessScore)) + geom_histogram(binwidth = 0.5, color = "white", fill = "lightblue") + ggtitle("Distribution of Happiness Score") # color for border color
+
+```
+
+```{r}
+# Check out the distribution of HappinessScore using a density curve
+# add basic density plot and change color
+p2 <- ggplot(happiness, aes(x = HappinessScore)) + geom_density(fill = "lightblue", alpha = 0.4) + ggtitle("Distribution of Happiness Score")
+
+# add mean line
+p2 + geom_vline(aes(xintercept = mean(HappinessScore)), color = "darkblue", linetype = "dashed")
+```
+
+```{r}
+# Create a plot which contains multiple scatter plots between all the variables and also contains the distribution of the numerical data, coloured by hemisphere
+# use ggscatmat from ggally package
+ggscatmat(happiness, color = "Hemisphere", alpha = 0.8)
+```
+
+## 6. Filtering Data
+`happiness`
+```{r}
+# Filter the dataset happiness by countries that are in both hemispheres; save that subset in a variable called bothHemispheres and check the first 3 entries
+bothHemispheres <- filter(happiness, happiness$Hemisphere == "both")
+
+head(bothHemispheres, 3)
+```
+
+```{r}
+# Create a new subset of the dataset happiness that includes the countries in which litres of beer consumption per capita are higher than 150; save that in a variable called beer150 and check the first 3 entries
+beer150 <- filter(happiness, happiness$Beer_PerCapita > 150)
+
+head(beer150, 3)
+```
+
+```{r}
+# Create a subset dataset of happiness that only includes from the second to the seventh column, and contains only the first 35 observations; save that subset in a variable called subset1
+subset1 <- happiness[1:35, 2:7]
+
+dim(subset1)
+```
+
+```{r}
+# Create a subset dataset of happiness that includes only the third and sixth column, and contains only the rows with a GDP_PerCapita higher or equal to 40; save it in a variable called subset2and check the first 3 entries
+
+# select the third and sixth column
+subset2 <- happiness[, c(3,6)]
+
+# select rows with GDP_PerCapita >= 40
+subset2 <- subset(subset2, subset2$GDP_PerCapita >= 40)
+
+head(subset2, 3)
+```
+
+`gmd_melt`
+```{r}
+# Create a subset which only contains NaN values; save that subset as gmd_NaN
+gmd_NaN <- gmd_melt[!complete.cases(gmd_melt), ]
+
+# count the number of rows having NaN value
+count(gmd_NaN)
+```
+

@@ -1,0 +1,82 @@
+---
+title: "Data in a day"
+output: html_notebook
+---
+
+## Import libraries
+```{r}
+library("jsonlite")
+library("plyr")
+```
+
+## Source the data
+Use the firebase API to pull ball dropping data
+```{r}
+json_data <- fromJSON("https://newton-decoded.firebaseio.com/falls.json")
+```
+
+
+## Explore and transform the data
+
+Let's have a look at what comes back from the API - it doesn't look very friendly to work with.
+```{r}
+print(json_data)
+```
+
+We need to create a function to help us make rows of data from our json
+```{r}
+createRow <- function(balldrop){
+ data.frame("height"=balldrop$x,"time2"=balldrop$y)
+}
+```
+
+Using Hadley's plyr library we can go through the whole json and put all the rows of data together
+```{r}
+df <- ldply(json_data, createRow)
+```
+
+Let's have a look at it now - much better!
+```{r}
+head(df)
+```
+
+```{r}
+summary(df)
+```
+
+Visualise the data
+```{r}
+# write code here to plot data - use tab to help you
+boxplot(df$time2)$out
+
+outliers <- boxplot(df$time2)$out
+
+df <- df[-which(df$time2 %in% outliers),]
+
+boxplot(df$time2)
+```
+
+```{r}
+plot(x = df$height, y = df$time2, xlab = "Height", ylab = "Time2")
+```
+
+
+## Building a model
+Build a linear mathematical model - this is using calculus under the hood to find the best line.
+```{r}
+# predict time2 from based on height
+linearModel <- lm(time2 ~ height , data=df)
+```
+
+## Evaluate your model
+The first thing to do is eyeball it to get a feel for what we have built.
+```{r}
+# write code here to plot data - use tab to help you
+plot(x = df$height, y = df$time2, xlab = "Height", ylab = "Time2")
+abline(linearModel)
+```
+
+We can also be quantitative with evaluation of our predictions by looking at the error between our predictions and our model - using the R-Squared value, 1 is perfect, 0 is terrible.
+```{r}
+summary(linearModel)$r.squared
+```
