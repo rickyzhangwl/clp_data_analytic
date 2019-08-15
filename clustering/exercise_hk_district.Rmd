@@ -1,0 +1,123 @@
+---
+title: "Clustering Exercise - HK District Data"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+# Load packages
+library(tidyverse)
+```
+
+The dataset for this exercise is from [Hong Kong 2016 Census](https://www.bycensus2016.gov.hk/en/). It lists the average income and median age under different district councils in Hong Kong.
+
+## 1. Prepare and Explore Data
+```{r}
+# 2. Load data file
+df <- read_csv("district_data.csv")
+
+# check first a few rows
+head(df)
+```
+
+```{r}
+# check the dimension of data
+dim(df)
+```
+
+
+```{r}
+# check the summary of data
+summary(df)
+```
+
+## 2. Data Cleaning
+```{r}
+# check column names
+names(df)
+
+# rename the column names
+names(df) <- c("district", "avg_income", "median_age")
+names(df)
+```
+
+The data type of `avg_income` column is string now, so we need to convert it to numeric.
+```{r}
+# remove $ and thousand separator
+df$avg_income <- gsub("[$,]", "", df$avg_income)
+
+# convert to numeric
+df$avg_income <- as.numeric(df$avg_income)
+
+# check the column types
+glimpse(df)
+```
+
+## 3. Data Visualization
+```{r}
+qplot(x = df$median_age, y = df$avg_income, label = df$district, geom = "text")
+```
+
+## 4. K-means Clustering
+Because the income data is in thousand, much 'bigger' than age data, so we need to scale the income data before clustering.
+
+```{r}
+df_scaled <- as.data.frame(scale(df[c("median_age", "avg_income")]))
+
+head(df_scaled)
+```
+
+```{r}
+# define the number of clusters
+k_clusters <- 3
+
+# get clustering result
+k_means_result <- kmeans(df_scaled, centers = k_clusters)
+
+# add cluster result to original data
+df$cluster <- as.factor(k_means_result$cluster)
+
+head(df)
+```
+
+```{r}
+# visualize cluster result
+qplot(x = df$median_age, y = df$avg_income, label = df$district, geom = "text", color = df$cluster)
+```
+
+## 5. Decide the optimal number of clusters
+```{r}
+# set maximum number of cluster
+k_cluster_max <- 10
+```
+
+```{r}
+# iterate through the number of clusters from 1 to 10
+within_sum_of_squares <- sapply(1:k_cluster_max, 
+                                function(k){
+                                  kmeans(df_scaled, centers = k)$tot.withinss})
+
+# visualize the output
+plot(1:k_cluster_max, within_sum_of_squares, type = "b",
+     xlab = "Number of clusters", ylab = "Total within cluster sum of squares")
+```
+
+The chart shows that probably 4 is the correct number of clusters as the curve bents most at this point, so we repeat clustering with 4 clusters.
+
+```{r}
+# conduct clustering with 4 clusters
+k_means_result_2 <- kmeans(df_scaled, centers = 4)
+
+# add result to dataframe
+df$cluster <- as.factor(k_means_result_2$cluster)
+```
+
+```{r}
+# visualize cluster result with ggrepel to avoid label overlapping
+library(ggrepel)
+qplot(x = df$median_age, y = df$avg_income, label = df$district, color = df$cluster,
+      xlab = "Median Age", ylab = "Average Income") + geom_text_repel()
+```
+
+The graph shows that the districts has been allocated to 4 groups, the result is reasonable and reliable.

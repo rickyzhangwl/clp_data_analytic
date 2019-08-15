@@ -1,0 +1,184 @@
+---
+title: "association_rules_practice"
+output: html_notebook
+---
+
+# The Brief
+By using more than 3 million shopping baskets data provided by **Instacart**, we are going to find the products that re commonly bought together.
+
+# Load Packages
+```{r warning=FALSE}
+library(arules)
+library(arulesViz)
+library(dplyr)
+```
+
+# Import Data
+```{r}
+# import the first 20000 rows of orders
+orders <- read.csv("order_products__prior.csv", nrows = 20000)
+
+# import all products rows
+products <- read.csv("products.csv")
+```
+
+```{r}
+# check the imported data
+head(orders)
+
+head(products)
+```
+
+```{r}
+# have a glimpse on the data
+glimpse(orders)
+
+glimpse(products)
+```
+
+The two datasets both have a variable called product_id. So we can join the two datasets on this variable to combine the datasets.
+
+```{r}
+# join the two dataset and group them by order id, create a new variable called basket including the products of each order
+order_basket <- orders %>%
+  inner_join(products, by="product_id") %>%
+  group_by(order_id) %>%
+  summarise(basket = as.vector(list(product_name)))
+```
+
+```{r}
+head(order_basket)
+```
+
+```{r}
+order_basket[1,]$basket
+```
+
+```{r}
+df <- as(order_basket$basket, "transactions")
+head(df)
+```
+
+```{r}
+dim(df)
+```
+
+
+```{r}
+summary(df)
+```
+
+```{r}
+inspect(df[1:3])
+```
+
+```{r}
+itemFrequencyPlot(df, topN = 10, type = "absolute", main = "Top 10 Most Frequent Items")
+```
+
+### Create Association Rules: Most Common Set of Items Bought
+```{r}
+# create first association rules
+rules <- apriori(df, parameter = list(target="frequent itemsets", support=0.008, minlen=2))
+
+# sort rules by support
+rules_support <- sort(rules, by="support", decreasing = TRUE)
+
+# check the first few rules
+inspect(rules_support[1:5])
+```
+
+```{r}
+# use a different support level - 0.01
+rules_2 <- apriori(df, parameter = list(target="frequent itemsets", support=0.01, minlen=2))
+
+# sort rules by support
+rules_support_2 <- sort(rules_2, by="support", decreasing = TRUE)
+
+# check the most bought itemset
+inspect(rules_support_2[1])
+```
+
+### Visualize The Most Commom Set of Items Bought
+```{r}
+rules_df <- DATAFRAME(rules_support)
+
+head(rules_df)
+```
+
+```{r}
+library(ggplot2)
+
+top_10 <- arrange(rules_df, support)
+top_10$items <- factor(top_10$items, levels = top_10$items)
+ggplot(top_10, aes(x = items, y = support)) + geom_col() +
+  coord_flip()
+```
+
+### Create Rules: First set of Association Rules
+```{r}
+# Create a set of association rules
+as_rules <- apriori(df, parameter = list(supp = 0.002, conf = 0.6, minlen=2, maxlen=3))
+
+# Print out the summary of rules
+summary(as_rules)
+```
+
+```{r}
+# Inspect all the 12 rules
+inspect(as_rules)
+```
+
+```{r}
+df_as_rules <- DATAFRAME(as_rules)
+head(df_as_rules)
+```
+
+```{r}
+df_as_rules$rule <- paste(df_as_rules$LHS, " => ", df_as_rules$RHS)
+head(df_as_rules)
+```
+
+
+```{r}
+# Create a scatterplot with support and confidence on the x and y axis (respectively), and lift as the shading of the dots
+plot(as_rules,method = 'scatterplot', measure = c("support","confidence"), shading = "lift")
+```
+
+```{r}
+# Create a graph plot for the first 10 rules
+plot(as_rules, method = "graph", control = list(cex=0.5))
+```
+
+```{r}
+# Sort the rules by confidence, most confident rules on top and print out the first 10
+inspect(sort(as_rules, by = "confidence")[1:10])
+```
+
+```{r}
+# Inspect the (first few) rules sorted by lift
+inspect(sort(as_rules, by = "lift")[1:5])
+```
+
+### Study Limes
+```{r}
+#  Create a subset of the rules called lime_rules and sort it by decreasing lift.
+rules = apriori(data=df, parameter=list(support=0.003,confidence=0.2, minlen=2, maxlen=3))
+
+lime_rules = sort(
+  subset(rules, subset=rhs %in% 'Limes'),
+  by = 'lift',decreasing = T
+)
+inspect(lime_rules)
+```
+
+```{r}
+lime_rules_2 <- apriori(df, parameter = list(support=0.003,confidence=0.2, minlen=2, maxlen=3), appearance = list(default = "lhs", rhs = "Limes"))
+
+inspect(lime_rules_2)
+```
+
+```{r}
+plot(lime_rules_2, method="graph",control = list(cex=0.5))
+```
+

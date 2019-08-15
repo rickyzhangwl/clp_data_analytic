@@ -1,0 +1,182 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(stringr)
+a <- str_to_title("CASE")
+a
+```
+
+
+```{r warning=FALSE}
+# Load packages
+library(dplyr)
+library(arules)
+library(arulesViz)
+library(tidyverse)
+library(readxl)
+library(stringr)
+```
+
+```{r}
+# Load the data
+orders <- read_excel("~/GitHub/clp_data_analytic/association_rules/Online_Retail.xlsx", n_max = 100000)
+```
+
+```{r}
+summary(orders)
+```
+
+
+```{r}
+# Check the structure
+glimpse(orders)
+```
+
+
+```{r}
+# Inspect first few rows
+head(orders)
+```
+
+```{r}
+orders <- na.omit(orders)
+
+orders <- orders %>% mutate(Description = str_to_title(Description)) %>%
+  mutate(Description = as.factor(Description))
+```
+
+```{r}
+head(orders)
+```
+
+
+```{r}
+# Join the data on product_id
+df <- orders %>%
+  group_by(InvoiceNo) %>%
+  summarise(basket = as.vector(list(Description)))
+```
+
+```{r}
+head(df)
+```
+
+
+```{r}
+df_tr <- as(df$basket, "transactions")
+```
+
+```{r}
+df_tr
+```
+
+```{r}
+inspect(head(df_tr))
+```
+
+```{r}
+itemFrequencyPlot(df_tr, topN=10, type="absolute")
+```
+
+```{r}
+# Display the distribution of number of items per basket
+hist(size(df_tr), breaks = 0:250, xaxt = "n",
+     main = "Number of Items per Basket", xlab = "Number of Items", col = "#00ADB5")
+axis(side = 1, at = seq(0, 250, by = 10), cex.axis = 0.8) # set x-axis label
+mtext(paste("Total Baskets: ", length(df_tr)), line = -1) # set sub-title
+```
+
+```{r}
+itemFrequencyPlot(df_tr, topN = 15, type = "absolute", col = "#00ADB5",
+                  main = "Top 15 Most Frequent Items")
+```
+
+```{r}
+itemFrequencyPlot(df_tr, topN = 15, type = "relative", col = "#00ADB5",
+                  main = "Top 15 Most Frequent Items")
+```
+
+#### Choice of Support and Confidence
+```{r}
+# Support and confidence values
+support_levels <- c(0.025, 0.02, 0.015, 0.01)
+confidence_levels <- seq(0.9, 0.1, by = -0.1)
+
+# Create empty integers for each support level
+library(hash)
+d <- hash()
+k <- 1
+
+for(i in support_levels) {
+  rules_count <- integer(length = length(confidence_levels))
+  
+  
+  for(j in 1:length(confidence_levels)) {
+    rules_count[j] <- length(apriori(df_tr, parameter = list(support=i, confidence=confidence_levels[j], target = "rules", minlen = 2)))
+  }
+
+  nam <- paste("rules_supp_", i, sep = "")
+  assign(nam, rules_count)
+  d[[toString(k)]] <- rules_count
+  k <- k + 1
+}
+
+```
+
+```{r}
+support_levels[1]
+```
+
+
+```{r}
+num_rules <- data.frame(d[["1"]], d[["2"]], d[["3"]], d[["4"]], confidence_levels)
+```
+
+```{r}
+ggplot(num_rules, aes(x = confidence_levels)) +
+    
+  geom_line(aes(y = d[["1"]], color = paste("Support level of", support_levels[1]))) +
+  geom_point(aes(y = d[["1"]], color = paste("Support level of", support_levels[1]))) +
+  
+  geom_line(aes(y = d[["2"]], color = paste("Support level of", support_levels[2]))) +
+  geom_point(aes(y = d[["2"]], color = paste("Support level of", support_levels[2]))) +
+  
+  geom_line(aes(y = d[["3"]], color = paste("Support level of", support_levels[3]))) +
+  geom_point(aes(y = d[["3"]], color = paste("Support level of", support_levels[3]))) +
+  
+  geom_line(aes(y = d[["4"]], color = paste("Support level of", support_levels[4]))) +
+  geom_point(aes(y = d[["4"]], color = paste("Support level of", support_levels[4]))) +
+  
+  scale_x_continuous(breaks = seq(0.1, 0.9, by = 0.1), 
+                     labels = seq(0.1, 0.9, by = 0.1)) +
+  
+  theme_bw() +
+  theme(legend.title = element_blank())
+  
+```
+
+```{r}
+rules1 <- apriori(df_tr, parameter = list(target = "frequent itemsets", supp = 0.01, conf = 0.6, minlen = 2, maxlen = 3))
+```
+
+```{r}
+plot(rules1)
+```
+
+
+```{r}
+inspect(sort(rules1, by = "confidence")[1:10])
+```
+
+```{r}
+plot(sort(rules1, by = "support")[1:10], method = "graph", control = list(cex=0.5))
+```
+
+```{r}
+ggplot(DATAFRAME(sort(rules1, by = "support", decreasing = TRUE)[1:10]), aes(x = items, y = support)) + geom_col() +
+  coord_flip()
+```
+
