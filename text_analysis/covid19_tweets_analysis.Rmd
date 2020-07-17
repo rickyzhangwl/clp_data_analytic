@@ -1,0 +1,471 @@
+---
+title: "Text Analysis Project -- COVID-19 Tweets Analysis"
+output: html_notebook
+---
+![](https://api.time.com/wp-content/uploads/2020/03/singapore_coronavirus_covid19.jpg?w=800&quality=85)
+
+The COVID-19 outbreak is an unprecedented global public health challenge. It is a heated topic in social networks. People discuss it and share the news about it as the number of new cases are soaring. In order to analyse how people discuss it in Twiiter and what's people's response, I will use text analysis tools in this article.
+
+My mission is to aquire the latest COVID-19 tweets data, clean the data for analysis with data transformation, then do modelling by text analysis methods such as Bag of Words, Sentiment Analysis, Association Rules and Topic Modelling.
+
+Let's start with extracting data from Twitter.
+
+# 1. Data Obtaining
+```{r, warning=FALSE}
+# load libraries
+# for data aquiring
+library(rtweet) # to return tweets data
+
+# for data cleaning
+library(tidyverse)
+library(reshape2)
+library(textclean)
+
+# for data visualization
+library(ggplot2)
+library(ggthemes)
+library(wordcloud)
+
+# for text analysis
+library(tidytext) # text mining
+library(tm) # text mining for creating corpus
+library(topicmodels) # topic model package
+library(textdata) # a frameword to deal with text dataset
+```
+
+
+```{r}
+# Extract data by function of rtweet
+rt <- search_tweets(
+  # Set search keyword
+  q = "#COVID19", 
+  
+  # Set the number of tweets to return
+  n = 18000, 
+  
+  # Specify the type of search results
+  type = "mixed",
+  
+  # Do not include retweets
+  include_rts = FALSE, 
+  
+  # Set tweet language to English
+  lang = "en", 
+  
+  # Twitter rate limits cap the number of search results returned to 18,000 every 15 minutes. To request more than that, simply set retryonratelimit = TRUE and rtweet will wait for rate limit resets.
+  retryonratelimit = TRUE
+)
+```
+
+```{r}
+# save the returned data to csv for future use
+save_as_csv(rt, "covid19.csv")
+```
+
+After saving the tweets data, we can load it directly.
+```{r}
+rt <- read.csv(file = "covid19.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+# check the dimension of returned tweets data
+dim(rt)
+```
+There are 17947 tweets returned to our dataframe with 90 variables.
+
+```{r}
+# View the dataframe
+View(rt)
+```
+
+Because we specified the search results by `"mixed"`, so let's order the tweets by post time and check the first and last 10 tweets.
+```{r}
+# check the first 10 rows by ordering created_at time
+head(rt[order(rt$created_at),], 10)
+```
+
+```{r}
+# check the last 10 rows by ordering created_at time
+tail(rt[order(rt$created_at),], 10)
+```
+Only 3 tweets were posted at least 10 hours than others. So we can plot the number of tweets created by time to see the trend.
+
+```{r}
+# Plot the frequency of tweets after 2020-03-28 23:00:00 with interval 1 min
+ts_plot(rt %>% filter(created_at > "2020-03-28 23:00:00"), 
+        by = "mins", 
+        trim = 1, 
+        color = "#00acee" # use twitter logo blue
+        ) +
+        ggplot2::theme_minimal() +
+        ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+        ggplot2::labs(
+          x = NULL, y = NULL,
+          title = "Frequency of #COVID19 tweets from past hours",
+          subtitle = "Twitters counts aggregated using 1 mins intervals",
+          caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+          )
+```
+
+We can see that the number of tweets created per minutes is in 50 to 150 range. At every o'clock and half past o'clock, the number of tweets published is much higher than other timing.
+
+
+# 2. Data Transformation
+
+We will use the text column of our `rt` dataset for text analysis so it is needed to transform the text column to corpus type.
+```{r}
+# transform our data to source format
+covid <- VectorSource(rt$text)
+
+# check the first tweet
+covid[1]
+```
+
+```{r}
+# transform the source file into a Corpus
+cv_corpus <- VCorpus(covid)
+
+# then inspect the first one tweet
+inspect(cv_corpus[1])
+```
+
+# 3. Data Cleaning
+
+Now text cleaning is to be conducted, as for text analysis it is necessary to remove punctuation, numbers, white space, stop words and specified words such as "virus", "covid", "coronavirus". Therefor, we can create a function to clean our text data.
+```{r}
+clean_corpus <- function(corp) {
+  
+  # remove any html format if any
+  corp <- tm_map(corp, content_transformer(replace_html))
+  
+  # remove any URLs
+  corp <- tm_map(corp, content_transformer(replace_url))  
+  
+  # transform all characters to lower case
+  corp <- tm_map(corp, content_transformer(tolower))
+  
+  # word stemming
+  corp <- tm_map(corp, stemDocument)  
+  
+  # remove punctuation
+  corp <- tm_map(corp, removePunctuation)
+
+  # remove numbers
+  corp <- tm_map(corp, removeNumbers)  
+  
+  # strip extra whitespace
+  corp <- tm_map(corp, stripWhitespace)
+  
+  # Remove english common stopwords
+  corp <- tm_map(corp, removeWords, stopwords("english"))
+  
+  # remove specified words
+  corp <- tm_map(corp, removeWords, 
+                 c("covid19", "coronavirus", "covid", "will", "can", "now", "get", "just",
+                   "new", "peopl", "one", "virus", "case", "day", "time", "pendem", "like",
+                   "take", "make", "say", "see"))
+
+  return(corp)
+}
+```
+
+```{r}
+# Apply the function to our corpus data
+cv_corpus_cleaned <- clean_corpus(cv_corpus)
+```
+
+```{r}
+# compare the first tweet before and after cleaning
+cat("Before:\n", content(cv_corpus[[1]]), "\n\n")
+
+cat("After:\n", content(cv_corpus_cleaned[[1]]))
+```
+Our function successfully changed all letters to lowercase, removed the numbers, url, punctuation, stop words and the specified words. In addition, the stemming was conducted for words like "reported", "confirmed", "discharged". Now we can start our modelling work.
+
+
+# 4. Modelling
+
+In modelling part, we will apply four methods to understand the COVID-19 tweets data.
+1. Bag of Words
+2. Gauge Sentiment
+3. Association Rules
+4. Topic Modelling
+
+## 4.1 Bag of Words Model
+```{r}
+# transform the cleaned data into a doc-term matrix
+dt_cv_corpus <- DocumentTermMatrix(cv_corpus_cleaned)
+
+# print the dimension of the matrix
+dim(dt_cv_corpus)
+```
+We have 17951 tweets and 38962 different words/terms.
+
+```{r}
+# transform to matrix format
+mt_cv_corpus <- as.matrix(dt_cv_corpus)
+```
+
+```{r}
+# view a portion of the matrix
+mt_cv_corpus[1:10, 50:55]
+```
+```{r}
+# visualise twitter data
+# convert from matrix to tidy data
+tidy_data <- tidy(dt_cv_corpus)
+
+tidy_data
+
+# the tidy_data would be used for the sentiment analysis in the later section.
+```
+```{r}
+term_fre <- colSums(mt_cv_corpus)
+```
+
+```{r}
+# sort term frequency in decreasing order
+term_fre <- sort(term_fre, decreasing = TRUE)
+```
+
+```{r}
+# change the term_fre to dataframe type
+freq_word <- data.frame(word = names(term_fre), freq = term_fre)
+
+# view the 20 most frequent terms
+head(freq_word, 20)
+```
+
+```{r}
+# plot the most frequent 20 terms in our data
+ggplot(head(freq_word, 20), aes(x = reorder(word, freq), y = freq), fill = "blue") + 
+  geom_col(fill = "#00acee") +
+  ggplot2::theme_minimal() +
+  ggplot2::theme(plot.title = ggplot2::element_text(face = "bold")) +
+  ggplot2::theme(axis.text.x = ggplot2::element_blank()) +
+  ggplot2::labs(
+    x = NULL, y = NULL,
+    title = "Most frequent 20 words in #COVID19 tweets\n",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet"
+  ) +
+  coord_flip() + 
+  geom_text(aes(label = freq), hjust = +1.2, color = "#FFFFFF", size = 3)
+```
+
+Having the frequency of each terms, let's make a wordcloud to visualise the most frequent terms.
+```{r}
+# create a vector of term frequency values
+terms_vec <- names(term_fre)
+```
+
+```{r}
+# create wordcloud for the 80 most frequent words with minimal frequency over 300
+wordcloud(words = terms_vec,
+          freq = term_fre,
+          min.freq = 300,
+          max.words = 80,
+          scale = c(3,0.13), # scale the size of different level of frequency
+          random.order = FALSE, # more frequent words will be in center
+          rot.per = 0.0, # proportion words with 90 degree rotation
+          colors = brewer.pal(6, "Set2")) # Set color theme with 5 colors
+```
+
+The wordloud show the most frequent words in the middle. We can see words such as `need`, `help`, `dure`, `test`, `death`, `stay`, `home`. These words are definitely associated with coronavirus as we know the situation around the `world`. Many people need `help` and cure as they had taken `test` and increasing numbers of people were positive. Many people are `durely` suffering from the `pandemic`. The virus has lead to more than 10 thousand `death`. To `protect` ourselves, it is better to `stay home` and `work` from home.
+
+Alternative way to visualise the wordcloud by `wordcloud2` package. It creates a widget and generate the words from most frequent to less frequent.
+```{r}
+library(wordcloud2)
+wordcloud2(data = head(freq_word, 1000), fontFamily = "Helvetica", shape = "diamond")
+```
+
+
+## 4.2 Gauge Sentiment
+
+Previously we got `tidy_data`, now we use it for sentiment analysis.
+```{r}
+# join the tidy data with the corresponding sentiment
+tweet_sentiment <- tidy_data %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word")) # set sentiment lexicon to bing
+```
+
+Because we chose `bing` lexicon, all terms will be categorized in a binary fashion into positive or negative.
+```{r}
+# inspect the result
+tweet_sentiment
+```
+
+The result shows each term in each document has its sentiment category -- `positive` or `negative`. To visualise the mose frequent `positive` and `negative` words, we should group our data by `sentiment` and `term` with sum value for `count`.
+
+```{r}
+tweet_sentiment %>%
+  # sum the count of each terms per sentiment
+  count(sentiment, term, wt = count) %>% # count the number of frequency of terms
+  filter(n > 200) %>% # only keep terms occur more than 200 times
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>% # change the n of negative to -n
+  mutate(term = reorder(term, n)) %>%
+  
+  # visualisation
+  ggplot(aes(term, n, fill = sentiment)) +
+  geom_col() + # bar chart
+  ggplot2::theme_minimal() + # set plot theme
+  ggplot2::theme(axis.text.x = ggplot2::element_blank()) + # delete x tick labels
+  geom_text(aes(label = n, y = n - 50*sign(n)), color = "#FFFFFF", size = 3) + # add data label
+  ggplot2::labs(
+    x = NULL, y = NULL, # remove x, y axis labels
+    title = "Most frequent words per sentiment",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet") +
+  coord_flip() # reverse x/y axis
+```
+
+We can make a comparison wordcloud to show the most frequent postive and negative words at the same plot.
+```{r}
+tidy_data %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word")) %>%
+  count(term, sentiment, sort = TRUE) %>%
+  acast(term ~ sentiment, value.var = "n", fill = 0) %>% # change molten frame to wide frame
+  subset(select = c(2, 1)) %>% # put positive before negative by reorder columns
+  comparison.cloud(max.words = 100,
+                   rot.per = 0,
+                   match.colors = TRUE,
+                   random.order = FALSE
+                   )
+```
+By comprison wordcloud, we can clearly see the two category words. Positive high frequent words include thank, protect, safe, love, support. Negative high frequent words include death, die, risk, outbreak, crisis, symptom.
+
+The `nrc` lexicon can catogerize words with 10 sentiments.
+```{r}
+# list all sentiment categories by nrc type
+unique(get_sentiments("nrc")$sentiment)
+```
+
+So we can make a comparison wordcloud for the other 8 sentiments excluding positive or negative.
+```{r}
+data_tidy <- tidy_data %>%
+  # Inner join to nrc lexicon
+  inner_join(get_sentiments("nrc"), by = c("term" = "word")) %>% 
+  
+  # Drop positive or negative
+  filter(!grepl("positive|negative", sentiment)) %>% 
+  
+  # Count by sentiment and term
+  count(sentiment, term) %>% 
+  
+  # Spread sentiment, using n for values
+  spread(sentiment, n, fill = 0)  %>% 
+  
+  # Convert to data.frame, making term the row names
+  data.frame(row.names = "term")
+
+# Plot comparison cloud
+comparison.cloud(data_tidy, 
+                 max.words = 100, 
+                 title.size = 1,
+                 random.order = FALSE, # more frequent words will be in center
+                 rot.per = 0.0, # proportion words with 90 degree rotation
+                 colors = brewer.pal(8, "Set2") # Set color theme with 8 colors for 8 sentiments
+                 )
+```
+
+Most words under each sentiment are correctly associated wit the sentiment. It's a surprise that
+the word `trump` belong to `surprise` sentiment. Maybe it is not a surprise as he always give us surprise :).
+
+
+## 4.3 Association Rules
+
+By assoiciation rules analysis, we can find the words associated with specific word. Firstly we need to remove the terms having high sparsity (0.999).
+```{r}
+# remove the terms having 0.999 sparsity, only terms occuring in 0.1% documents are retained
+new_doc_term <- removeSparseTerms(dt_cv_corpus, 0.99)
+
+new_doc_term
+
+# Convert to matrix
+new_mat <- as.matrix(new_doc_term)
+```
+
+197 terms fulfill our filtering requirement. Now we can check the associated words. As the term `need` is the most frequent word, let's see what people `need` most.
+```{r}
+# Use the findAssocs function to find words associated with the 'need'
+findAssocs(new_doc_term, "need", 0.03)
+```
+
+It is not suprised to see that people `need` `help`, `need` to take `care` and `protect` themselves from the virus, `need` to `keep` `safe` and `need` `ppe`. For those infected, they `need` `nurse` to `help`.
+
+Now we can check what terms are associated with `safe`, as it is important for everyone to keep safe under COVID-19 outbreak.
+```{r}
+# Use the findAssocs function to find words associated with the 'safe'
+findAssocs(new_doc_term, "safe", 0.03)
+```
+The most associated words with `safe` are `stay`, `keep` and `home`. Actually, `keeping stay home` is the most efficient way to protect ourselves from the virus. Therefore, from COVID-19 tweets data, I think we should know that it is important to stay home under current serious situation.
+
+## 4.5 Topic Modelling
+```{r}
+# sum the words in each document
+sum_rows <- apply(new_doc_term, 1, sum)
+
+# remove documents without words
+dtm_nonzeros <- new_doc_term[sum_rows > 0, ]
+```
+
+```{r}
+# apply LDA function and set the number of topics to 4
+lda <- LDA(dtm_nonzeros, k = 4)
+```
+
+```{r}
+# get the first 10 terms of each topic
+term <- terms(lda, 10)
+
+term
+```
+
+We can visualize the first 10 terms of each topic.
+```{r}
+# construct a tidy data frame of the LDA model result by tidy function from tidytext package
+topics <- tidy(lda, matrix = "beta")
+
+# generate the top 10 terms of each topic
+top_terms <- topics %>%
+  group_by(topic) %>%
+  top_n(10, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+# plot the first 10 terms by beta value
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  ggplot2::labs(
+    x = NULL,
+    title = "Top 10 terms in each topic",
+    caption = "\nSource: Data collected from Twitter's REST API via rtweet") +
+  coord_flip() +
+  scale_x_reordered()
+```
+The beta value tells us probability of that term (word) belonging to that topic.
+
+We can see some terms like `help`, `need`, `trump` and `pandemic` appear in more than 1 topic, this is not surprised. There are differences between these collections of terms. 
+- Topic 1 is about `test`, `die` from `positive`, like a topic about the new cases and death report. 
+- Topic 2 is about `stay home`, `need` and `help`, like a topic about what people do.
+- Topic 3 is more related to `china`. We know that recently the spreading pace of the pandemic in China is almost stopped. 
+- In topic 4, the terms `trump`, `know` and `good` appear together.
+
+# 5. Conclusion
+By using a combination of Bag of Words analysis, sentiment analysis, association rules and topic modeling, we have come to a good understanding of the latest COVID-19 tweets.
+
+- Overall, the tweets convey a situation that many people need help as the high frequency of words such as `need`, `help` and many tweets mentioned we should `stay home` to `protect` ourselves as it is really necessary.
+- By sentiment analysis, we know that the COVID-19 has lead to a lot of death, but medical forces keep working, people help and support each other, this is verified as by news we know many stories about the help and love in our fight with COVID-19.
+
+
+PS: In addition, we find that `trump` is a 'surprise' term and the terms `trump`, `know` and `good` are in same topic by our modelling. I think this is a good modelling, as 'actually' no body knows coronavirus better than he does, just like in below video. :)
+
+```{r}
+library("htmltools")
+library("vembedr")
+```
+
+```{r}
+embed_url("https://www.youtube.com/watch?v=sR3f95BGIiA")
+```

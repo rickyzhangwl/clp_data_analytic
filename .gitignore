@@ -1,0 +1,6 @@
+
+association_rules/instacart/departments.csv
+association_rules/instacart/order_products__prior.csv
+association_rules/instacart/order_products__train.csv
+association_rules/instacart/orders.csv
+association_rules/instacart/products.csv

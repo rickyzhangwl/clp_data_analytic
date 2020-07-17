@@ -1,0 +1,144 @@
+---
+title: "classification_practice"
+output: html_notebook
+---
+
+```{r}
+# Load packages
+library(ggplot2)
+library(tidyverse)
+library(corrplot)
+library(fastDummies)
+```
+
+```{r}
+# Load the dataset
+dataset <- read_csv("bank-data.csv")
+
+# Inspect the first 15 entries
+head(dataset, 15)
+```
+
+```{r}
+# check the proportion of subsribed and not subsribed customers
+table(dataset$subscribed) %>% prop.table()
+```
+
+```{r}
+# find out if there is any missing values
+any(is.na(dataset))
+
+# find out how many rows with missing values
+sum(is.na(dataset))
+```
+
+```{r}
+# find out the columns having missing values
+names(which(sapply(dataset, FUN=anyNA)))
+```
+
+```{r}
+table(dataset$age)
+```
+
+```{r}
+# Plot a bar chart of the counts of the customer age
+barplot(table(dataset$age))
+```
+
+```{r}
+boxplot(dataset$age)
+```
+
+```{r}
+hist(dataset$age, xlim = c(0,100), breaks=100)
+```
+
+```{r}
+boxplot(age~subscribed, data=dataset)
+```
+
+```{r}
+younger <- subset(dataset, age < 60)
+
+boxplot(age~subscribed, data = younger)
+```
+
+```{r}
+boxplot(numberTimesContactedInCampaign~subscribed, data = subset(dataset, numberTimesContactedInCampaign <= 10))
+```
+
+```{r}
+boxplot(daysSinceLastContact~subscribed, data = dataset)
+```
+
+```{r}
+boxplot(totalTimesContacted~subscribed, data = dataset)
+```
+
+
+```{r}
+subset_1 <- subset(dataset, subscribed == "yes")
+subset_2 <- subset(dataset, subscribed == "no")
+
+hist(subset_1$day_of_month)
+hist(subset_2$day_of_month)
+```
+
+```{r}
+hist(dataset$numberTimesContactedInCampaign)
+```
+
+```{r}
+levels(factor(dataset$subscribed))
+```
+
+
+```{r}
+# Convert any variables you want to test as numeric, using "as.numeric()" function, and save these as new vectors (e.g., dataset_subscribed, dataset_age, etc.)
+dataset_subscribed <- as.numeric(as.factor(dataset$subscribed))
+dataset_age <- dataset$age
+dataset_job <- as.numeric(as.factor(dataset$job))
+dataset_dom <- as.numeric(as.factor(dataset$day_of_month))
+dataset_ntcin <- dataset$numberTimesContactedInCampaign
+dataset_last_contact <- dataset$daysSinceLastContact
+dataset_ttc <- dataset$totalTimesContacted
+# Once your data has been changed from categorical to numeric, you can now perform a correlation matrix. Save the newly converted variables into a new data frame called "corr_data" (this makes future steps easier by excluding any data you do not need);
+corr_data<-data.frame(dataset_subscribed, dataset_age, dataset_job, dataset_dom, dataset_ntcin, dataset_last_contact, dataset_ttc)
+# rename the variables in your new data frame by using the setNames() function:
+corr_data<-setNames(corr_data, c("subscribed", "age", "job", "day_of_month", "numberTimesContactedInCampaign", "daysSinceLastContact", "totalTimesContacted"))
+# check headers to make sure the variables in the new data frame are named correctly
+head(corr_data)
+# run the correlation matrix algorith on your "corr_data" dataframe, by using the cor() function, and rename it as a new vector called "corr_matrix"
+corr_matrix <- cor(corr_data)
+corr_matrix
+# install and load the R package "corrplot" so you can graph your new correlation matrix vector:
+
+corrplot(corr_matrix, method="pie", type='upper')
+```
+
+```{r}
+fastDummies::dummy_cols(dataset, select_columns = "job")
+```
+
+### Understanding *p*-values.
+The p-value is the probability of finding the same result for something if you repeated the same test/analysis 100 times,
+
+If this probability is lower than the conventional 5% (*p*<0.05) the correlation coefficient is called statistically significant, meaning the probability of this event or finding occurring again is not due to chance (i.e., a less than %5 chance this occurrence is random/due to chance).
+
+In relation to correlation coefficients, a *p*-value of <0.05 tells us that there is a <5% chance that there is no correlation between two parameters (i.e., the probability of a true correlation is high). Calculate some correlations between parameters. A *p*-value <0.05 is a good correlation
+
+```{r}
+# this is how to statistically test (p-value) the correlation between two variables
+# testing correlation between job and subscribed
+cor.test(dataset_job, dataset_subscribed, method=c("pearson"))
+# testing correlation between marital status and subscribed
+#cor.test(as.numeric(dataset$marital), dataset_subscribed, method=c("pearson"))
+# testing correlation between level of education and subscribed
+#cor.test(as.numeric(dataset$education), as.numeric(dataset$subscribed), method=c("pearson"))
+# testing correlation between housing and subscribed
+#cor.test(as.numeric(dataset$housing), as.numeric(dataset$subscribed), method=c("pearson"))
+```
+What can we conclude about these correlations based on their p-values?
+```
+

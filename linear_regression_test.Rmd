@@ -1,0 +1,111 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(MASS)
+```
+
+
+```{r}
+boston <- Boston
+```
+
+```{r}
+dim(boston)
+
+str(boston)
+```
+
+```{r}
+summary(boston)
+```
+
+```{r}
+head(boston)
+```
+
+```{r}
+boston$black <- NULL
+```
+
+```{r}
+set.seed(198761)
+
+sample <- sample.int(n = nrow(boston), size = floor(0.75 * nrow(boston)))
+
+train <- boston[sample, ]
+test <- boston[-sample,]
+```
+
+```{r warning=F}
+library(ggplot2)
+```
+
+```{r}
+corplot(boston)
+```
+
+
+```{r}
+ggplot(boston, aes(x=rm, y=medv)) + geom_point() + geom_smooth(method = 'lm')
+```
+
+```{r}
+univariate_model <- lm(medv ~ rm, train)
+
+summary(univariate_model)
+```
+
+```{r}
+plot(univariate_model)
+```
+
+```{r}
+res <- residuals(univariate_model)
+
+res <- as.data.frame(res)
+
+ggplot(res, aes(res)) + geom_histogram(fill = 'dark blue', alpha = 0.5, binwidth = 2)
+```
+```{r}
+library(tidyverse)
+```
+
+```{r}
+test$predicted.medv <- predict(univariate_model, test)
+
+error <- test$medv - test$predicted.medv
+
+rmse <- sqrt(mean(error^2))
+
+rmse
+```
+
+```{r}
+multivariate_model <- lm(medv ~ ., train)
+
+plot(multivariate_model)
+```
+
+```{r}
+test$predicted.medv <- predict(multivariate_model, test)
+```
+
+```{r}
+error <- test$medv - test$predicted.medv
+
+rmse <- sqrt(mean(error^2))
+
+rmse
+```
+
+```{r}
+anova(univariate_model, multivariate_model)
+```
+
+```{r}
+m1 <- stepAIC(multivariate_model, direction = 'both')
+```
+

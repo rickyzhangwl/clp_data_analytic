@@ -1,0 +1,369 @@
+---
+title: "Completed Text Analysis Practice Notebook"
+---
+# First we need to install all the libraries that we don't have.
+```{r}
+install.packages(c('topicmodels', 'tidytext','textclean', 'tm', 'reshape2', 'dplyr', 'ggplot2', 'wordcloud'))
+```
+
+# 1. Then, as always, we need  to load them
+```{r}
+# For reading and formatting text data
+library(tidytext)  # puts our text data in 'tidy' format which makes life easier than if we deal with data frames
+library(tm)        # for general text mining functions
+library(reshape2)  # For flexibly reshaping data
+library(dplyr)     # for manipulating data quickly
+library(textclean) # for using more text cleaning functions on top of those provided by the 'tm' library
+library(ggplot2)   # for data visualisation
+library(wordcloud) # for producing wordclouds
+library(topicmodels) # for association and topic modeling
+
+# Note: if any of those libraries aren't installed, you would need to first run the install.packages() function:
+# e.g. install.packages('tidytext')  prior to running above.
+```
+
+
+# 2. Now that we've loaded the libraries that we will need, we need to read the data into RStudio.
+
+### To use the Twitter data on Apple, download  the .csv from decd.co/apple-tweets
+```{r}
+# Ensure that strings (text) are not read as factors in R, but as characters. This is required for any text analysis we do later.
+
+tweets <- read.csv('ENTER_YOUR_CSV_HERE.csv', stringsAsFactors = FALSE)
+
+```
+
+### OPTIONAL: Load Tweets from a different company
+
+#### If you are using the Apple tweets, skip these lines. Please also note, calling data via API may be blocked by firewall security within your organisation.
+
+rtweet is an implementation of calls designed to collect and organize Twitter data via Twitter's REST and stream Application Program Interfaces (API)
+
+```{r}
+# First install and load the rtweet library
+install.packages('rtweet')
+library(rtweet)
+```
+
+```{r}
+# Get these values from your App "Keys and Tokens" page on Twitter's Developer page
+
+# app = Your Registered App Name
+# consumer_key = Consumer API keys: API Key
+# consumer_secret = Consumer API keys: API secret key
+# access_token = Access token
+# access_secret = Access token secret
+
+twitter_token <- create_token(app = 'APP_NAME', consumer_key = 'XXXXXXXXXXXXXXXX', consumer_secret = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', access_token = 'XXXXXXXXXXXXXXXXXXX-XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX', access_secret = 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX' )
+
+tweets <- search_tweets(q = '@COMPANY_NAME OR #COMPANY_NAME', n = 10000, lang = 'en', type = 'mixed', include_rts = FALSE)
+
+```
+
+# Use the View function to view the dataframe in another tab
+View(tweets)
+
+# What are our columns?
+colnames(tweets)
+```
+
+# 3. Data Transformation
+
+### We clearly have lots of columns that could be of interest. Maybe quoted text is more indicative of sentiment? Maybe less indicative? Perhaps using  particular hashtags would be useful or the presence of an image url for example? For the purposes of this workshop however, we'll only be focusing on the 'text' column.
+
+### We first need to transform the text column into a format that R can work with in order to analyse the text.
+
+```{r}
+# Step 1: Transform it to 'source' format
+twitter_source <- VectorSource(tweets$text)
+
+# What does the first tweet look like?
+twitter_source[1]
+
+```
+
+
+```{r}
+# Step 2: Transform the source file into a Corpus. This adds a metadata layer to our text.
+corpus <- VCorpus(twitter_source)
+
+# Let's see what that looks like
+inspect(corpus[[1]])
+
+```
+
+
+# 4. Data Cleaning
+
+### Data cleaning is especially important in a text analytics project -- i.e. how do we make our machine understand text, let alone sentiment!?
+
+### We need to separate the words first. This is called 'tokenisation' -- i.e converting the data into a form where each word in our list of tweets represents a token.
+
+### The problem with tokenising directly however, is that we'll end up with separate tokens for words that should be the same -- e.g. "but", "But" and "BUT".
+
+### But maybe an all-uppercase word is more indicative of sentiment? We can't be sure of all cases, so it's up to you as the data scientist, to decide on which data preprocessing and cleaning steps are most appropriate.
+
+### For some guidance as to the functions you can implement, do skim the 'textclean' package documentation here: https://cran.r-project.org/web/packages/textclean/textclean.pdf
+
+```{r}
+# Create a mega function that applies all the necessary cleaning functions you want to run. Note that order matters!
+
+# Feel free to comment out irrelevant ones, add new ones, and re-order them to your liking.
+
+clean_corpus <- function(corp) {
+
+  # Remove punctuation
+  corp <- tm_map(corp, removePunctuation)
+
+  # Transform all characters to lower case
+  corp <- tm_map(corp, content_transformer(tolower))
+
+  # Remove stopwords -- i.e. words like "and", "the", "is" etc. We can also add words we can anticipate will be       very common in our corpus like, "apple"
+  corp <- tm_map(corp, removeWords, c(stopwords("en")))
+
+  # Strip extra whitespace
+  corp <- tm_map(corp, stripWhitespace)
+
+  # Remove any html format if there is any
+  corp <- tm_map(corp, content_transformer(replace_html))
+
+  # Remove any URLs
+  corp  <- tm_map(corp, content_transformer(replace_url))
+
+  return(corp)
+}
+```
+
+
+### Apply the clean_corpus function to our corpus
+```{r}
+# Apply our clean_corpus function to our twitter corpus
+corpus_clean <- clean_corpus(corpus)
+
+#  Let's see the changes! Try printing the first tweet before and after we applied the cleaning function.
+#  Before:
+print(content(corpus[[1]]))
+
+# After:
+print(content(corpus_clean[[1]]))
+
+# Is this what we want? Any more changes needed? If there are, jump back to the function, make your changes and apply it again on our corpus.
+```
+
+
+# 5. The Bag-of-Words model
+
+### There are many techniques we can use to model our corpus.  One of the most common, and easiest to implement,  is the bag-of-words.
+
+### This in essence, involves turning our corpus into a matrix whereby the rows represent the tweets -- also called 'documents' -- and the columns represent our words, or terms. This is aptly called, a document-term matrix.
+
+```{r}
+# Transform our data into a doc-term matrix using the DocumentTermMatrix function from the 'tm' library
+doc_term_mat <- DocumentTermMatrix(corpus_clean)
+
+# Check the dimensions of our matrix.
+print(dim(doc_term_mat))
+
+# Clearly we have 9991 tweets, and 18442 different words.
+
+
+# Transform it into a 'matrix' object  type in R in order to see what this looks like:
+doc_mat <- as.matrix(doc_term_mat)
+
+# Let's see a small window of our matrix. E.g.
+doc_mat[11:14,244:250]
+```
+
+
+
+# 6. Visualising our tweets
+
+### The 'tidytext' library offers neat functions that we can apply to format and visualise our text data. To use these functionalities however, we need to first convert our data into the 'tidy' format.
+
+```{r}
+# Convert from matrix to tidy format using the handy 'tidy' function
+tidy_stuff <- tidy(doc_term_mat)
+
+# What does this look like?
+tidy_stuff
+
+# Notice we now have a count column
+```
+
+
+### Now that we're using the tidy format, we can visualise
+
+```{r}
+### Data Visualisation
+term_frequency <- colSums(doc_mat)
+
+# Sort term_frequency in descending order
+term_frequency <- sort(term_frequency, decreasing = TRUE)
+
+# View the top 10 most common words
+term_frequency[1:10]
+
+# Plot a barchart of the 10 most common words
+barplot(term_frequency[1:10], col = "red", las = 2)
+```
+
+
+# Maybe a wordcloud of the top 60 most frequently used terms
+```{r}
+# Create a vector of term frequency values
+terms_vec <- names(term_frequency)
+
+# Create a wordcloud for the values in word_freqs
+wordcloud(terms_vec, term_frequency,
+          max.words = 60, colors = "red")
+```
+
+
+
+# 7. Gauging sentiment
+
+### To measure sentiment, we need to use a lexicon of terms that have been manually labelled by experts. The 'tidytext' library has three sentiment lexicons with varying levels complexity.
+
+```{r}
+# Use the get_sentiments() function -- try, "bing", "afinn", and "nrc"
+get_sentiments('bing')
+
+# Today, we'll be using the 'bing' lexicon but feel free to experiment with the other two!
+```
+
+
+
+### We now need to merge the bing lexicon with our tidy data in order to match each of the words in our corpus with a sentiment.
+
+### Something to think about: Could there be exceptions?
+
+```{r}
+# We use the piping command "%>%" from the  'dplyr' library for easily applying functions to our tidy data
+tweet_sentiments <- tidy_stuff %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word"))
+
+# Let's see what that looks like now
+tweet_sentiments
+```
+
+
+### Visualise most frequently used words associated with a "Negative" vs. a "Positive" sentiment (according to the 'bing' lexicon)
+
+```{r}
+# Using the ggplot2 library, let's build a barplot
+tweet_sentiments %>%
+  count(sentiment, term, wt = count) %>%
+  ungroup() %>%
+  filter(n >= 100) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(term = reorder(term, n)) %>%
+  ggplot(aes(term, n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  ylab("Most frequently used words per sentiment category") +
+  coord_flip()
+```
+
+### Build a wordcloud for top 100 most used negative and positive words.
+
+```{r}
+#### GIST
+
+tidy_stuff %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word")) %>%
+  count(term, sentiment, sort = TRUE) %>%
+  acast(term ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("darkred", "navyblue"),
+                   max.words = 100)
+```
+
+
+# 8. Find associations between terms
+
+### Before we dive in though, it would be wise to reduce the sparsity of the matrix -- i.e. only keep relatively common terms.
+
+```{r}
+new_doc_term <- removeSparseTerms(doc_term_mat, 0.999)
+
+# Convert to matrix
+new_mat <- as.matrix(new_doc_term)
+
+# Let's see how it looks now
+new_doc_term
+```
+
+
+```{r}
+# Use the findAssocs function to find words associated with the 'facetime'
+findAssocs(new_doc_term, "facetime", 0.2)
+
+# Find word associations with other words!
+```
+
+
+
+# 9. Cluster the tweets using Kmeans
+
+### Remember: Clustering is unsupervised -- meaning, as data analysts we should dive into each cluster individually to understand why the algorithm grouped the data that way.
+
+
+```{r}
+# As with any machine learning model, we first have to set a fixed random seed
+set.seed(123)
+
+# Set an arbitrary value for k
+k <- 2
+kmeansResult <- kmeans(t(new_mat), k)
+
+# Check the size of each cluster -- i.e. number of tweets in each
+kmeansResult$size
+```
+
+### Feel free to explore different k values, and clustering algorithms! Note that choosing k arbitrarily isn't best practice -- perhaps we can use the Elbow method to find an optimal number of clusters?
+
+
+### Let's check the top 30 words in every cluster to get a sense of why each of those words
+
+```{r}
+for (i in 1:k) {
+cat(paste("cluster ", i, ": ", sep=""))
+s <- sort(kmeansResult$centers[i,], decreasing=T)
+cat(names(s)[1:10], "\n")
+}
+```
+
+
+# 10. Topic modeling using Latent Dirichlet Allocation
+
+### Topic modeling, a common application of text mining, involves 'discovering topics' in text data. 'Topics' here however, are abstract concepts and are often quite dissimilar from what we as humans could regard a topic -- for instance, if we had news data, topics could broadly speaking include, 'Sport', 'Politics', and 'Finance.'
+
+### As machines don't have an understanding of language semantics however (yet!), they can only group documents by style of writing and similarity of words -- thereby modelling our process of dividing documents into topics.
+
+### LDA is a commonly used unsupervised learning algorithm for topic modelling. Given a document-term matrix, and a number of topics which we specify, it returns a list of words belonging to each 'topic.'
+
+### We will use the 'topicmodels' library to do this.
+
+```{r}
+# First, we need to only keep the documents with at least one word -- i.e. the sum of each row should at least be equal to 1.
+
+# We find the sum of words in each Document
+sum_rows <- apply(new_doc_term , 1, sum)
+
+# And remove all documents without words
+dtm_nozeros <- new_doc_term[sum_rows> 0, ]
+```
+
+
+### Now we apply the LDA model
+```{r}
+# Apply the LDA function from the 'topicmodels' library and assign it to a variable
+# Let's say we're looking at 4 topics (feel free to play around with this!)
+lda <- LDA(dtm_nozeros, k = 4)
+
+# Get the first 10 terms in each of the topics
+term <- terms(lda, 10)
+
+# Let's see what our topics look like.
+term
+```
+
+### As with any unsupervised algorithm, it is up to us now to dive into each of those topics and understand why the words are terms that way. Note, it may or may not make sense to us!

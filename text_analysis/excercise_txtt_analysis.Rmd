@@ -1,0 +1,335 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+1. Source and manage
+
+```{r, warning=FALSE}
+# load libraries
+library(tidytext)
+library(tm)
+library(dplyr)
+library(textclean)
+library(ggplot2)
+library(reshape2)
+library(wordcloud)
+library(topicmodels)
+library(textdata)
+```
+
+```{r}
+# load data
+df <- read.csv("apple-tweets.csv", stringsAsFactors = FALSE)
+```
+
+```{r}
+# view data
+View(df)
+```
+
+```{r}
+# view columns
+colnames(df)
+```
+
+2. Data Transformation
+```{r}
+# transform to source format
+twitter_source <- VectorSource(df$text)
+
+# check the first tweet
+twitter_source[1]
+```
+
+```{r}
+# transform the source file into a Corpus
+corpus <- VCorpus(twitter_source)
+```
+
+```{r}
+# inspect the first one 
+inspect(corpus[1])
+```
+
+3. Data Cleaning
+```{r}
+# create the function to clean text data
+
+
+clean_corpus <- function(corp) {
+  
+  # remove punctuation
+  corp <- tm_map(corp, removePunctuation)
+  
+  # remove numbers
+  corp <- tm_map(corp, removeNumbers)
+  
+  # transform all characters to lower case
+  corp <- tm_map(corp, content_transformer(tolower))
+  
+  # remove stop words and "apple"
+  corp <- tm_map(corp, removeWords, c(stopwords("en"), "apple"))
+  
+  # strip extra whitespace
+  corp <- tm_map(corp, stripWhitespace)
+  
+  # remove special characters
+  f <- content_transformer(function(x, pattern) gsub(pattern, "", x))
+  corp <- tm_map(corp, f, "\”“")
+  # [\[\]"',.^&$%#]
+  
+  # remove any html format if any
+  corp <- tm_map(corp, content_transformer(replace_html))
+  
+  # remove any URLs
+  corp <- tm_map(corp, content_transformer(replace_url))
+  
+  return(corp)
+}
+```
+
+```{r}
+# we can check the list of English stopwords
+stopwords("en")
+```
+
+
+```{r}
+cleaned_data <- clean_corpus(corpus)
+```
+
+```{r}
+# print the first tweet after cleaning
+print("Before")
+print(content(corpus[[1]]))
+
+print("After")
+print(content(cleaned_data[[1]]))
+```
+
+
+4. Modelling
+4.1 Bag of Words Model
+```{r}
+# Transform our data into a doc-term matrix 
+doc_term_mat <- DocumentTermMatrix(cleaned_data)
+```
+
+```{r}
+# print the dimension of doc_term_mat
+dim(doc_term_mat)
+```
+we have 9991 tweets and 17860 different words
+
+```{r}
+# transform it to matrix format
+doc_mat <- as.matrix(doc_term_mat)
+
+# view a portion of the matrix
+doc_mat[1:10, 30:35]
+```
+
+```{r}
+# visualise twitter data
+# convert from matrix to tidy data
+tidy_data <- tidy(doc_term_mat)
+
+tidy_data
+```
+
+```{r}
+term_fre <- colSums(doc_mat)
+```
+
+```{r}
+term_fre <- sort(term_fre, decreasing = TRUE)
+```
+
+```{r}
+term_fre[1:20]
+```
+
+```{r}
+barplot(term_fre[1:20], col = "grey", las = 2)
+```
+
+
+```{r}
+# create a vector of term frequency values
+terms_vec <- names(term_fre)
+
+# create wordcloud for 60 most frequent words
+#library(viridisLite)
+#color_pal <- plasma(n = 5)
+wordcloud(words = terms_vec,
+          freq = term_fre,
+          min.freq = 100,
+          max.words = 50,
+          random.order = FALSE, # more frequent words will be in center
+          rot.per = 0.0, # proportion words with 90 degree rotation
+          colors = brewer.pal(5, "Set2")) # Set color theme with 5 colors
+```
+
+
+4.2 Gauging sentiment
+```{r}
+# try sentiment
+get_sentiments('bing')
+```
+
+```{r}
+tweet_sentiment <- tidy_data %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word"))
+```
+
+```{r}
+tweet_sentiment
+```
+
+```{r}
+tweet_sentiment %>%
+  count(sentiment, term, wt = count) %>%
+  filter(n > 100) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>% # change the n of negative to -n
+  mutate(term = reorder(term, n)) %>%
+  ggplot(aes(term, n, fill = sentiment)) +
+  geom_col() +
+  ylab("Most frequently used words per sentiment") +
+  coord_flip() # reverse x/y axis
+```
+
+
+```{r}
+# Using the ggplot2 library, let's build a barplot
+tweet_sentiment %>%
+  count(sentiment, term, wt = count) %>%
+  #ungroup() %>%
+  filter(n >= 100) %>%
+  mutate(n = ifelse(sentiment == "negative", -n, n)) %>%
+  mutate(term = reorder(term, n)) %>%
+  ggplot(aes(term, n, fill = sentiment)) +
+  geom_bar(stat = "identity") +
+  ylab("Most frequently used words per sentiment category") +
+  coord_flip()
+```
+
+
+```{r}
+tidy_data %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word")) %>%
+  count(term, sentiment, sort = TRUE) %>%
+  acast(term ~ sentiment, value.var = "n", fill = 0) %>% # change molten frame to wide frame
+  subset(select = c(2, 1)) %>% # put positive before negative by reorder columns
+  comparison.cloud(max.words = 100,
+                   rot.per = 0,
+                   match.colors = TRUE,
+                   random.order = FALSE
+                   )
+```
+
+
+```{r}
+tidy_data %>%
+  inner_join(get_sentiments("bing"), by = c(term = "word")) %>%
+  count(term, sentiment, sort = TRUE) %>%
+  acast(term ~ sentiment, value.var = "n", fill = 0) %>%
+  comparison.cloud(colors = c("darkred", "navyblue"),
+                   max.words = 100)
+```
+
+4.3 Association Rules
+```{r}
+# remove the terms having 0.999 sparsity, only terms occuring in 0.1% documents are retained
+new_doc_term <- removeSparseTerms(doc_term_mat, 0.999)
+
+new_doc_term
+
+# Convert to matrix for clustering
+new_mat <- as.matrix(new_doc_term)
+```
+
+```{r}
+# Use the findAssocs function to find words associated with the 'facetime'
+findAssocs(new_doc_term, "facetime", 0.2)
+```
+
+# Clustering the tweets
+```{r}
+# As with any machine learning model, we first have to set a fixed random seed
+set.seed(123)
+
+# Set an arbitrary value for k
+k <- 3
+
+kmeansResult <- kmeans(t(new_mat), k)
+
+# Check the size of each cluster -- i.e. number of tweets in each
+kmeansResult$size
+```
+
+### Feel free to explore different k values, and clustering algorithms! Note that choosing k arbitrarily isn't best practice -- perhaps we can use the Elbow method to find an optimal number of clusters?
+```{r}
+# iterate through the number of clusters from 1 to 10
+within_sum_of_squares <- sapply(1:10, 
+                                function(k){
+                                  kmeans(t(new_mat), centers = k)$tot.withinss})
+
+# visualize the output
+plot(1:10, within_sum_of_squares, type = "b",
+     xlab = "Number of clusters", ylab = "Total within cluster sum of squares")
+```
+
+### Let's check the top 30 words in every cluster to get a sense of why each of those wordsappeared in its respective cluster.
+```{r}
+for (i in 1:k) {
+cat(paste("cluster ", i, ": ", sep=""))
+s <- sort(kmeansResult$centers[i,], decreasing=T)
+cat(names(s)[1:30], "\n")
+}
+```
+
+# Topic Modelling
+```{r}
+sum_rows <- apply(new_doc_term, 1, sum)
+
+# remove documents without words
+dtm_nonzeros <- new_doc_term[sum_rows > 0, ]
+```
+
+```{r}
+lda <- LDA(dtm_nonzeros, k = 4)
+```
+
+```{r}
+# get the first 10 terms of each topic
+term <- terms(lda, 10)
+
+term
+```
+
+```{r}
+topics <- tidy(lda, matrix = "beta")
+
+top_terms <- topics %>%
+  group_by(topic) %>%
+  top_n(5, beta) %>%
+  ungroup() %>%
+  arrange(topic, -beta)
+
+top_terms %>%
+  mutate(term = reorder_within(term, beta, topic)) %>%
+  ggplot(aes(term, beta, fill = factor(topic))) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~ topic, scales = "free") +
+  coord_flip() +
+  scale_x_reordered()
+```
+
+```{r}
+get_sentiments("nrc")
+```
+
+```{r}
+get_sentiments(lexicon = "bing")
+```
+

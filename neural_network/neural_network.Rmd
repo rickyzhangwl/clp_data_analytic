@@ -1,0 +1,63 @@
+---
+title: "Neural Network Notebook"
+output: html_notebook
+---
+Load appropriate packages
+```{r, warning=FALSE}
+library(keras)
+library(tidyverse)
+```
+
+Load the dataset and inspect
+```{r}
+data <- read_csv("kc_house_data.csv")
+glimpse(data)
+```
+
+Remove less interesting columns and add price and ID at the very end
+```{r}
+ID <- data$id
+price <- data$price
+data <- data %>% select(-c('price', 'id', 'date', 'zipcode', 'yr_built', 'condition', 'yr_renovated', 'lat', 'long', 'sqft_lot15'))
+data <- data %>% cbind(ID) %>% cbind(price)
+str(data)
+```
+
+```{r}
+train <- data %>% sample_frac(size = 0.75)
+test <- anti_join(data, train, by='ID')
+
+x_train <- train %>% select(-c('ID', 'price'))
+y_train <- train %>% select(c('price'))
+
+x_test <- test %>% select(-c('ID', 'price'))
+y_test <- test %>% select(c('price'))
+
+x_train_scaled <- as.matrix(scale(x_train))
+x_test_scaled <- as.matrix(scale(x_test, center = attr(x_train_scaled, "scaled:center"),
+                                  scale=attr(x_train_scaled, "scale:scale")))
+
+y_train <- as.matrix(y_train)
+y_test <- as.matrix(y_test)
+```
+
+Build a model in keras
+```{r}
+model <- keras_model_sequential()
+
+model %>%
+  layer_dense(input_shape = ncol(x_train), activation = "tanh", kernel_initializer = "normal", units = 24) %>%
+  layer_dropout(rate = 0.04) %>%
+  layer_dense(units = 12, kernel_initializer = "normal") %>%
+  layer_activation_leaky_relu() %>%
+  layer_dense(units = 4, kernel_initializer = "normal") %>%
+  layer_activation_leaky_relu() %>%
+  layer_dropout(rate = 0.03) %>%
+  layer_dense(units = 12, kernel_initializer = "normal") %>%
+  layer_activation_leaky_relu() %>%
+  layer_dense(units = 24, kernel_initializer = "normal") %>%
+  layer_activation_leaky_relu() %>%
+  layer_dense(units = 1)
+```
+
+

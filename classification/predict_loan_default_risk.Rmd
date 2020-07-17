@@ -1,0 +1,329 @@
+---
+title: "Predicting Loan Default Risk"
+output: html_notebook
+---
+
+# 1. The Business Problem
+A small bank got about 500 loan applications and I am responsible for determining if customers are creditworthy to give a loan to. For this project, I will analyze the business problem using the classification model and provide a list of creditworthy customers to the manager of the bank.
+
+I have the following information to work with:
+
+1. Data on all past applications
+2. The list of customers that need to be processed
+
+## Key Decisions:
+**1. What decisions needs to be made?**
+
+The decisions to be made is which customers are creditworthy to give a loan to.
+
+**2. What data is needed to inform those decisions?**
+
+The past loan applicants’ data is needed to train the predictive model, while the new set of loan applicants’ data is required to make prediction based on the predictive model. The two data sets have below common variables that possibly useful for the prediction and informing decisions.
+
+# 2. Data Preparation
+
+```{r, warning=FALSE}
+# Load packages
+library(tidyverse)
+library(readxl)
+library(corrplot)
+library(ggplot2)
+library(pROC)
+library(rpart)
+library(rpart.plot)
+library(caret)
+library(AppliedPredictiveModeling)
+library(randomForest)
+```
+
+After loading the required packages for analysis, we need to load the data sets to have a look on the data and check if data cleansing is needed.
+
+```{r}
+# Load data
+past_data <- read_excel("credit-data-training.xlsx")
+
+new_data <- read_excel(("customers-to-score.xlsx"))
+
+# Check the first few rows
+head(past_data)
+```
+
+
+```{r}
+# Have a glimpse on the data
+glimpse(past_data)
+```
+
+The past application data has 500 rows, 20 variables. `Credit-Application-Result` is the target variable.
+
+For all variables, there are only two types of data: Character for categorical data and Double for numeric data.
+
+Firstly, we need to replace the "-" in variable names by underscore "_" for better column indexing.
+
+```{r}
+# replace "-" by "_" for the two datasets
+names(past_data) <- gsub(x = names(data), pattern = "-", replacement = "_")
+names(new_data) <- gsub(x = names(data2), pattern = "-", replacement = "_")
+```
+
+
+```{r}
+# check the summary of the data
+summary(past_data)
+```
+
+By previous `glimpse(past_data)`, we found that there were missing value. Let's check the counts of missing values
+
+```{r}
+# check the missing values for all variables
+colSums(sapply(past_data, is.na))
+```
+
+```{r}
+colSums(sapply(new_data, is.na))
+```
+
+For unlabeled rows (new_data), no missing values. But for 500 labeled rows (past_data), `Duration-in-Current-address` and `Age-years` have 344 and 12 missing values respectively. We have to remove the `Duration-in-Current-address` due to the high portion of missing values. For latter, we can fill in with median values of `Age-years`.
+
+```{r}
+# Remove `Duration-in-Current-address` column
+past_data$Duration_in_Current_address <- NULL
+
+# Mutate missing values for `Age-years`
+past_data <- past_data %>%
+          mutate(Age_years = 
+                   replace(Age_years,
+                           is.na(Age_years),
+                           median(Age_years, na.rm = TRUE)))
+
+# check if missing values still exist
+sum(is.na(past_data$Age_years))
+```
+
+No missing values now. Let's have a look on the value distribution of variables.
+
+```{r}
+# check the value distribution for numeric variables
+past_data %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+```
+
+We will remove `Foreign-Worker`, `Occupation` as thet are with low variability in values.
+
+```{r}
+# Remove the two columns
+past_data$Foreign_Worker <- NULL
+past_data$Occupation <- NULL
+```
+
+In addition, let's check for the categorical variables.
+```{r}
+table(past_data$Credit_Application_Result)
+table(past_data$Account_Balance)
+table(past_data$Payment_Status_of_Previous_Credit)
+table(past_data$Purpose)
+table(past_data$Value_Savings_Stocks)
+table(past_data$Length_of_current_employment)
+table(past_data$Guarantors)
+table(past_data$Concurrent_Credits)
+table(past_data$No_of_Credits_at_this_Bank)
+```
+
+It can be found that for the target variable `Credit_Application_Result`, 358 applications are labeled creditworthy and the other 142 are non-creditworthy. 
+
+We will remove `Concurrent_credits` as it only has one distinct value.
+
+```{r}
+# Remove `Concurrent_credits` column
+past_data$Concurrent_Credits <- NULL
+```
+
+Last step is to convert the character variables to factor type.
+
+```{r}
+# change all character columns to factor
+past_data <- as.data.frame(unclass(past_data))
+past_data$Credit_Application_Result <- factor(past_data$Credit_Application_Result, levels = c("Non-Creditworthy", "Creditworthy"))
+
+# check the converted data
+glimpse(past_data)
+```
+
+Now 16 variables remaining with only numeric and factor type of values. Data preparation process is finished.
+
+# 3. Model Planning and Building
+
+As the answer of whether a loan applicant is creditworthy is binary (yes or no), so we need to use Binary Classification Model, such as Logistical Regression and Decision Tree, to make the decisions. The Forest Model , usually for Non-Binary Model, are also applicable here.
+
+Primarily, let's split the data into train and test set.
+```{r}
+# Split the data into train and test set
+dpart <- createDataPartition(past_data$Credit_Application_Result, p = 0.75, list = FALSE)
+train <- past_data[dpart, ]
+test <- past_data[-dpart, ]
+```
+
+## 3.1 Logistic Regression Model
+```{r}
+# Train the model with logistic regression model
+log_reg <- glm(data = train, Credit_Application_Result ~., family = "binomial")
+
+# Inspect the result
+summary(log_reg)
+```
+
+The character "*" indicates the significant variables in logistic regression model, including `Account_Balance`, `Payment_Status_of_Previous_Credit`, `Purpose`, `Length_of_current_employment` and `Instalment_per_cent`.
+
+```{r}
+# Use the trained model to predict for train data
+pre_log_reg <- predict(log_reg, type = c("response"))
+```
+
+
+```{r}
+# Set the threshold to 0.5
+predict_result <- ifelse(pre_log_reg > 0.5, "Creditworthy", "Non-Creditworthy")
+
+# Check the confusion matrix
+table(Credit_Application_Result, predict_result)
+```
+
+```{r}
+# Calculate the model overall accuracy
+(228+28) / (228 + 79 + 41 +28)
+
+# Calculate the accuracy for Creditworthy
+228 / (228 + 41)
+```
+
+The overall accuracy is 0.68, not very good. But the accuracy for `Creditworthy` is about 0.85, indicating a decent accuracy rate.
+
+Let's predict for test data!
+```{r}
+# Predict for test data set
+pre_log_reg_test <- predict(log_reg, newdata = test, type = c("response"))
+
+# Set the output to binary values
+predict_result_2 <- as.factor(ifelse(pre_log_reg_test > 0.5, "Creditworthy", "Non-Creditworthy"))
+
+predict_result_2 <- factor(predict_result_2, levels = c("Non-Creditworthy", "Creditworthy"))
+
+# Add predicted result to test data set
+test$Result_Predict <- predict_result_2
+
+# Check the confusion matrix
+cm_lr <- confusionMatrix(data = predict_result_2, reference = test$Credit_Application_Result)
+cm_lr
+```
+
+We get an overall accuracy of 0.7419. The accuracy for `Creditworthy` is as high as 0.89888, but the accuracy for `Non-Creditworthy` is only 0.34286. Our model has a bias in predicting `Creditworthy` much better than `Non-creditworthy`.
+
+Beside, we can plot the ROC to check the AUC value, which is 0.791.
+
+```{r}
+# Plot the ROC
+roc_lr <- roc(response = Credit_Application_Result, predictor = Result_Predict, data = test, plot = TRUE, print.auc = TRUE, col = "red")
+```
+
+## 3.2 Decision Tree Model
+
+```{r}
+# Train the decision tree model with train data set, using information gain
+dt <- rpart(Credit_Application_Result ~ .,
+            data = train,
+            method = "class",
+            control = rpart.control(minsplit = 1, maxdepth = 4, cp = 0),
+            parms = list(split = "information"))
+
+# Plot the decision tree result
+rpart.plot(dt, type = 5, extra = 2)
+```
+
+```{r}
+# fitting decision tree classification model
+predict_dt <- predict(dt, newdata = test, type = "class")
+```
+
+```{r}
+# Add predicted result to test data set
+test$Result_Predict <- predict_dt
+
+# Check the confusion matrix
+cm_dt <- confusionMatrix(data = predict_dt, reference = test$Credit_Application_Result)
+cm_dt
+```
+
+We get an overall accuracy of 0.7419, same with logistic regression model. The accuracy for `Creditworthy` is as high as 0.8652, slightly less than logistic regression model, but the accuracy for `Non-Creditworthy` is with a better value of 0.4286. The decision tree model also has a bias in predicting `Creditworthy` much better than `Non-creditworthy`.
+
+As previous model, we can plot the ROC for decision tree result to check the AUC value, which is 0.647.
+
+```{r}
+roc_dt <- roc(test$Credit_Application_Result, as.numeric(test$Result_Predict), plot = TRUE, print.auc = TRUE, col = "red")
+```
+
+## 3.3 Random Forest Model
+```{r}
+# Like decision tree, we train the model and fit for test data set
+rf <- randomForest(Credit_Application_Result ~ ., data = train, importance = TRUE)
+
+predict_rf <- predict(rf, newdata = test, type = "class")
+
+test$Result_Predict <- predict_dt
+
+# Check confusion matrix
+cm_rf <- confusionMatrix(data = predict_rf, reference = test$Credit_Application_Result)
+cm_rf
+```
+
+```{r}
+roc_rm <- roc(test$Credit_Application_Result, as.numeric(test$Result_Predict), plot = TRUE, print.auc = TRUE, col = "red")
+```
+
+We get an overall accuracy of 0.7419, same with logistic regression model and decision tree. The accuracy for `Creditworthy` is as high as 0.93258, higher than logistic regression model, but the accuracy for `Non-Creditworthy` is with a lowest value of 0.25714. The Random Forest model has  the biggest bias in predicting `Creditworthy`  better than `Non-creditworthy`.
+
+The AUC value is 0.647, same with decision tree, but less than logistic regression (0.791).
+
+# 4. Communicate The Results
+
+Considering below criterias:
+- Overall Accuracy against your Validation set
+- Accuracy within “Creditworthy” and “Non-Creditworthy” segments
+- ROC graph
+- Bias in the Confusion Matrices
+
+Logistic Regression Model will be chosen to predict the customers qualified for a loan based on overall model performance. Firstly, as mentioned in Part 3, the three models have same overall accuracy 0.7419 against validation set, but Logistic Regression Model has high accuracy in predicting “Creditworthy”, with 0.89888 accuracy within “Creditworthy” and 0.34286 accuracy within “Non-creditworthy”, indicating a bias in predicting “Creditworthy” much better than “Non-creditworthy”. Moreover, it has the highest AUC (0.791) among the three models.
+
+# 5. Operationalize
+
+Let's use the our Logistic Regression Model to predict the loan default risk for the new customers.
+
+```{r}
+# Select all columns of the cleaned past_data as we removed some columns during data cleasing
+col_names <- as.character(names(past_data))
+
+# deselect column `Credit_Application_Result`
+col_names <- col_names[2:16]
+```
+
+```{r}
+# Predict for new customer data
+predict_new <- predict(log_reg, newdata = new_data[, col_names], type = c("response"))
+```
+
+```{r}
+# Label the customer with creditworthy or non-creditworthy
+predict_new <- ifelse(predict_new > 0.5, "Creditworthy", "Non-Creditworthy")
+
+new_data$Result_predict <- predict_new
+
+# Count the number of creditworthy customers as predicted
+sum(predict_new == "Creditworthy")
+```
+
+Total 400 out the 500 new customers are predicted as creditworthy. We can transfer the prediction result with predicted customer label to the manager of the bank as our plan stated at the beginning of this article.
+
+

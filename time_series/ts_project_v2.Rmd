@@ -1,0 +1,260 @@
+---
+title: "Hong Kong Electricity Consumption Forecast 2020-2021"
+output: html_notebook
+---
+# 1. Introduction
+Electricity is the most common energy source for homes and offices in Hong Kong. The electricity consumed in Hong Kong is generated mainly using coal, natural gas and nuclear energy as the sources. Electricity consumption forecast is one of the critical task for planning engineers in electric company, as the power generation planning and electricity dispatching bases on the consumption forecast.
+
+This article is to analyse Hong Kong electricity time series data from 1970 to 2019 with time series analysis tools and do forecast for the future a few years. The data is downloaded from the official website of [Census and Statistics Department](https://www.censtatd.gov.hk/home/index.jsp) of Hong Kong.
+
+# 2. Data Preparation
+```{r, warning=FALSE}
+# Load packages
+library(tidyverse)
+library(xts)
+library(forecast)
+library(tseries)
+library(ggfortify)
+```
+
+```{r}
+# read the data
+df <- read.csv("hk_electricity.csv")
+
+# inspect the first and last few rows
+head(df)
+
+tail(df)
+```
+
+It can be found that the Hong Kong electricity consumption data starts from Jan 1970 an ends in Oct 2019, showing the monthly electricity consumption data of different categories including domestic, commercial, industrial, street lighting and the exports to Mainland China.
+
+This article will focus on forecasting domestic electricity consumption by Arima and ETS model. To test the accuracy of our models, we select the data before 2019 as training dataset, select data in 2019 as test dataset for comparison.
+
+```{r}
+# Count the number of rows
+nrow(df)
+```
+
+
+```{r}
+# Split the domestic consumption data into training set and test set
+domestic_train <- head(df$Domestic, nrow(df) - 10)
+domestic_test <- tail(df$Domestic, 10)
+```
+
+```{r}
+# change data to time series format
+ts_domestic <- ts(df$Domestic, frequency = 12, start = c(1970, 1), end = c(2019, 10))
+ts_domestic_train <- ts(domestic_train, frequency = 12, start = c(1970, 1), end = c(2018, 12))
+ts_domestic_test <- ts(domestic_test, frequency = 12, start = c(2019, 1))
+```
+
+# Data Understanding and Visualization
+```{r}
+# Check how many observations there are for each unit of time
+frequency(ts_domestic_train)
+```
+
+```{r}
+# Get a summary of the values
+summary(ts_domestic_train)
+```
+
+Let's plot the domestic electricity consumption data to understand it better.
+```{r}
+# Plot the training set and add a linear regression line
+plot(ts_domestic_train, ylab = "Electricity Consumption (in Terajoules)", main = "HK Domestic Electricity Consumption 1970-2018")
+abline(reg=lm(ts_domestic_train~time(ts_domestic_train)))
+```
+
+```{r}
+# Explore some seasonality within our data using a boxplot
+boxplot(ts_domestic_train~cycle(ts_domestic_train), xlab = "Month", ylab = "Domestic electricity consumption")
+```
+
+# 3. Decomposition
+After data visualization, we can see that there is a general trend upwards of domestic electricity consumption since 1970. Besides, it is obvious that there is a pretty consistent seasonal pattern, with peak electricity consumption happening every year in the summer months and with off peak times in winter months.
+
+Now we can decompose our data and separate this general trend from the seasonal trend.
+```{r}
+# Decompose the data
+decomposed <- decompose(ts_domestic_train, type = "multiplicative")
+autoplot(decomposed)
+```
+
+# 4. Time Series Analysis and Forecast
+## 4.1 ARIMA model
+Auto ARIMA makes time series analysis really simple for us as it eliminates steps such as making data stationary, determining pdq values. Below are the steps for implementing auto ARIMA:
+
+1. Load the data: This step will be the same. Load the data into your notebook
+2. Preprocessing data: The input should be univariate, hence drop the other columns
+3. Fit Auto ARIMA: Fit the model on the univariate series
+4. Predict values on validation set: Make predictions on the validation set
+5. Calculate RMSE: Check the performance of the model using the predicted values against the actual values
+
+```{r}
+arima <- auto.arima(ts_domestic_train)
+arima
+```
+
+```{r}
+#T he ggtsdiag function from ggfortify R package performs model diagnostics of the residuals and the acf. will include a autocovariance plot.
+ggtsdiag(arima)
+```
+The residual plots appear to be centered around 0 as noise, with no pattern. the arima model is a good fit.
+
+```{r}
+# We can plot a forecast of the time series using the arima model, with a 95% confidence interval, forecasted data till Oct 2019.
+arima_forecast <- forecast(arima, h=10, level = c(95)) # 10 for 2019.01-2019.10
+
+autoplot(arima_forecast, main = ("HK Domestic Electricity Consumption 1970-2020")) + ylab("Electricity Consumption (in Terajoules)")
+```
+
+```{r}
+# visualize the model overall accuracy
+plot((arima$x), col = "red")
+lines((arima$fitted), col = "blue")
+```
+
+## 4.2 ETS Model
+Exponential Smoothing Methods are a family of forecasting models. They use weighted averages of past observations to forecast new values. Here, the idea is to give more importance to recent values in the series. Thus, as observations get older (in time), the importance of these values get exponentially smaller.
+Exponential Smoothing Methods combine Error, Trend, and Seasonal components in a smoothing calculation. Each term can be combined either additively, multiplicatively, or be left out of the model. These three terms (**E**rror, **T**rend, and **S**eason) are referred to as **ETS**.
+
+You can find more information about ETS model [here](https://medium.com/better-programming/exponential-smoothing-methods-for-time-series-forecasting-d571005cdf80).
+
+Now let's built the ETS model for our data.
+```{r}
+# Automated forecasting using an ETS model
+ets <- ets(ts_domestic_train)
+ets
+```
+
+```{r}
+# The ggtsdiag function from ggfortify R package performs model diagnostics of the residuals and the acf. will include a autocovariance plot.
+ggtsdiag(ets)
+```
+The residual plots appear to be centered around 0 as noise, with no pattern. the arima model is a good fit.
+
+```{r}
+# We can plot a forecast of the time series using the ETS model, with a 95% confidence interval, forecasted data till Oct 2019
+ets_forecast <- forecast(ets, h=10, level = c(95)) # 10 for 2019.01-2019.10
+
+autoplot(ets_forecast, main = ("HK Domestic Electricity Consumption 1970-2020")) + ylab("Electricity Consumption (in Terajoules)")
+```
+
+## 4.3 Model Comparison
+We can compare the two models results to find which one is more accurate for our data.
+```{r}
+# Compare the forecasted data to actual data (2019.1-2019.10)
+ts.union(ts_domestic_test, head(arima_forecast$mean,10), head(ets_forecast$mean,10))
+```
+
+```{r}
+# Plot the comparison
+plot(ts_domestic_test, ylab = "Domestic Electricity Consumption")
+lines(head(arima_forecast$mean,10), col="blue")
+lines(head(ets_forecast$mean,10), col="green")
+```
+It is difficult to decide which one is better. Let's explore more about the accuracy indicators for training set and test set.
+
+```{r}
+arima_forecast %>% forecast(h = 10) %>% 
+  accuracy(ts_domestic)
+
+ets_forecast %>% forecast(h = 10) %>% 
+  accuracy(ts_domestic)
+```
+
+Notice that the ARIMA model fits the training data slightly better than the ETS model, and that the ARIMA model provides more accurate forecasts on the test set, as ARIMA model has lower RMSE and MASE value.
+
+Therefore, we generate and plot forecasts from ARIMA model for the next 2 years.
+
+# 5. Forecast with ARIMA Model
+## 5.1 Forecast Domestic Electricity Consumption 
+```{r}
+arima_2 <- auto.arima(ts_domestic)
+
+forecast_2021 <- forecast(arima_2, h=2+24, level = c(95))
+autoplot(forecast_2021)
+```
+
+```{r}
+# check the forecast data
+forecast_2021$mean
+```
+
+## 5.2 Forecast Commerical Electricity Consumption
+```{r}
+# create commercial electricity tim-series data
+ts_commercial <- ts(df$Commercial, frequency = 12, start = c(1970, 1), end = c(2019, 10))
+
+# use auto arima model to forecast the data till the end of 2021
+arima_commercial <- auto.arima(ts_commercial)
+
+forecast_2021_commercial <- forecast(arima_commercial, h=2+24, level = c(95))
+
+# plot the data
+autoplot(forecast_2021_commercial)
+```
+
+```{r}
+# check the forecast value of commercial electricity consumption
+forecast_2021_commercial$mean
+```
+
+## 5.3 Forecast Industrial Electricity Consumption
+```{r}
+# create commercial electricity tim-series data
+ts_industrial <- ts(df$Industrial, frequency = 12, start = c(1970, 1), end = c(2019, 10))
+
+# use auto arima model to forecast the data till the end of 2021
+arima_industrial <- auto.arima(ts_industrial)
+
+forecast_2021_industrial <- forecast(arima_industrial, h=2+24, level = c(95))
+
+# plot the data
+autoplot(forecast_2021_industrial)
+```
+We can find that the industrial electricity consumption data has seasonality as well, but the trend of it doesn't like commercial and domestic data. The peak is around 1990 then the industrial data starts to drop. For the forecasted data, its 95% condidence interval range is much bigger than the forecast commeicial and domestic data. 
+
+```{r}
+# check the forecast value of industrial electricity consumption
+forecast_2021_industrial$mean
+```
+
+## 5.4 Forecast Street Light Electricity Consumption
+```{r}
+# create commercial electricity tim-series data
+ts_streetlight <- ts(df$Street.lighting, frequency = 12, start = c(1970, 1), end = c(2019, 10))
+
+# use auto arima model to forecast the data till the end of 2021
+arima_streetlight <- auto.arima(ts_streetlight)
+
+forecast_2021_streetlight <- forecast(arima_streetlight, h=2+24, level = c(95))
+
+# plot the data
+autoplot(forecast_2021_streetlight)
+```
+It can be found that the time series model is not suitable for street light data as the original data doesn't show consistent seasonality and trend. Besides, as the street light electricity consumption is much lower than other sectors, we won't count it in the total consumption forecast.
+
+
+## 5.5 Plot Forecast Data for 2020-2021
+So we export the forecast data of 2020 and 2021 for domestic, commercial and industrial sectors.
+```{r}
+write.csv(forecast_2021$mean, "domestic.csv")
+write.csv(forecast_2021_commercial$mean, "commercial.csv")
+write.csv(forecast_2021_industrial$mean, "industrial.csv")
+```
+
+After data merging and cleaning in excel, we use **Tableau** to make area plot to show the forecasted electricity consumption by sectors in 2020-2021.
+```{r echo=FALSE, out.width='100%'}
+knitr::include_graphics('/Users/RickyZhang/Downloads/Dashboard 1.png')
+```
+
+We can see all three sectors shows seasonality characteristics with peaks in summer and valleys in winter times, but the industrial data is relatively stable. The peak of total consumption appears in July and August, around 17000 terajoule, the valley of total consumption appears in February, around 10000 terajoule.
+
+# 6. Conclusion
+This article discussed the time series analysis for Hong Kong electricity consumption data from 1971 to 2019. By model building and comparison, the ARIMA model better fit the forecast and based on the model, we forecasted the electricity consumption data for Year 2020 to 2021.
+
+The forecast and estimation data can be helpful for power untility companies like CLP to better plan our electric power generation and power station outage works.

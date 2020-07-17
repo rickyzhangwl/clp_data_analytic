@@ -1,0 +1,1328 @@
+\documentclass[]{article}
+\usepackage{lmodern}
+\usepackage{amssymb,amsmath}
+\usepackage{ifxetex,ifluatex}
+\usepackage{fixltx2e} % provides \textsubscript
+\ifnum 0\ifxetex 1\fi\ifluatex 1\fi=0 % if pdftex
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+\else % if luatex or xelatex
+  \ifxetex
+    \usepackage{mathspec}
+  \else
+    \usepackage{fontspec}
+  \fi
+  \defaultfontfeatures{Ligatures=TeX,Scale=MatchLowercase}
+\fi
+% use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+% use microtype if available
+\IfFileExists{microtype.sty}{%
+\usepackage{microtype}
+\UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\usepackage[margin=1in]{geometry}
+\usepackage{hyperref}
+\hypersetup{unicode=true,
+            pdftitle={Association Rules Project},
+            pdfborder={0 0 0},
+            breaklinks=true}
+\urlstyle{same}  % don't use monospace font for urls
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.77,0.63,0.00}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{graphicx,grffile}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+\IfFileExists{parskip.sty}{%
+\usepackage{parskip}
+}{% else
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt plus 2pt minus 1pt}
+}
+\setlength{\emergencystretch}{3em}  % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{0}
+% Redefines (sub)paragraphs to behave more like sections
+\ifx\paragraph\undefined\else
+\let\oldparagraph\paragraph
+\renewcommand{\paragraph}[1]{\oldparagraph{#1}\mbox{}}
+\fi
+\ifx\subparagraph\undefined\else
+\let\oldsubparagraph\subparagraph
+\renewcommand{\subparagraph}[1]{\oldsubparagraph{#1}\mbox{}}
+\fi
+
+%%% Use protect on footnotes to avoid problems with footnotes in titles
+\let\rmarkdownfootnote\footnote%
+\def\footnote{\protect\rmarkdownfootnote}
+
+%%% Change title format to be more compact
+\usepackage{titling}
+
+% Create subtitle command for use in maketitle
+\providecommand{\subtitle}[1]{
+  \posttitle{
+    \begin{center}\large#1\end{center}
+    }
+}
+
+\setlength{\droptitle}{-2em}
+
+  \title{Association Rules Project}
+    \pretitle{\vspace{\droptitle}\centering\huge}
+  \posttitle{\par}
+    \author{}
+    \preauthor{}\postauthor{}
+    \date{}
+    \predate{}\postdate{}
+  
+
+\begin{document}
+\maketitle
+
+\hypertarget{problem-statement}{%
+\section{1. Problem Statement}\label{problem-statement}}
+
+\textbf{Instacart} is an American technology company that operates as a
+same-day grocery delivery and pick-up service in the U.S. and Canada.
+Customers can shop for groceries through the Instacart mobile app or
+Instacart.com from the company's more than 300 national, regional and
+local retailer partners.
+
+This article is going to use Association Rules on Instacart transaction
+data to make recommendation to help retailers. We will analyze:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  What's the most frequent items?
+\item
+  What's the most frequent bought-together items?
+\item
+  What will customers purchase before buying specific item?
+\item
+  What will customers purchase after buying specific item?
+\end{enumerate}
+
+\hypertarget{data-preparation}{%
+\section{2. Data Preparation}\label{data-preparation}}
+
+The data is from
+\href{https://www.kaggle.com/c/instacart-market-basket-analysis}{Kaggle}.
+To focus on Association Rules Analysis, we will use two data files to do
+the market data analysis. One is \texttt{order\_products\_\_prior.csv},
+the other one is \texttt{products.csv}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Load required packages}
+\KeywordTok{library}\NormalTok{(dplyr)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Attaching package: 'dplyr'
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:stats':
+## 
+##     filter, lag
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     intersect, setdiff, setequal, union
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(arules)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: Matrix
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'arules'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:dplyr':
+## 
+##     recode
+\end{verbatim}
+
+\begin{verbatim}
+## The following objects are masked from 'package:base':
+## 
+##     abbreviate, write
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(arulesViz)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Loading required package: grid
+\end{verbatim}
+
+\begin{verbatim}
+## Registered S3 method overwritten by 'seriation':
+##   method         from 
+##   reorder.hclust gclus
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(ggplot2)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Load the data files}
+\NormalTok{orders <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"order_products__prior.csv"}\NormalTok{, }\DataTypeTok{nrows =} \DecValTok{30000}\NormalTok{) }\CommentTok{# to reduce computability, we just load the first 30000 rows.}
+
+\NormalTok{products <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"products.csv"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Check the data structure}
+\KeywordTok{glimpse}\NormalTok{(orders)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Observations: 30,000
+## Variables: 4
+## $ order_id          <int> 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3,...
+## $ product_id        <int> 33120, 28985, 9327, 45918, 30035, 17794, 401...
+## $ add_to_cart_order <int> 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6,...
+## $ reordered         <int> 1, 1, 0, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1,...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{glimpse}\NormalTok{(products)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Observations: 49,688
+## Variables: 4
+## $ product_id    <int> 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 1...
+## $ product_name  <fct> Chocolate Sandwich Cookies, All-Seasons Salt, Ro...
+## $ aisle_id      <int> 61, 104, 94, 38, 5, 11, 98, 116, 120, 115, 31, 1...
+## $ department_id <int> 19, 13, 7, 1, 13, 11, 7, 1, 16, 7, 7, 1, 11, 17,...
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Inspect first few rows}
+\KeywordTok{head}\NormalTok{(orders)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   order_id product_id add_to_cart_order reordered
+## 1        2      33120                 1         1
+## 2        2      28985                 2         1
+## 3        2       9327                 3         0
+## 4        2      45918                 4         1
+## 5        2      30035                 5         0
+## 6        2      17794                 6         1
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{head}\NormalTok{(products)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   product_id
+## 1          1
+## 2          2
+## 3          3
+## 4          4
+## 5          5
+## 6          6
+##                                                        product_name
+## 1                                        Chocolate Sandwich Cookies
+## 2                                                  All-Seasons Salt
+## 3                              Robust Golden Unsweetened Oolong Tea
+## 4 Smart Ones Classic Favorites Mini Rigatoni With Vodka Cream Sauce
+## 5                                         Green Chile Anytime Sauce
+## 6                                                      Dry Nose Oil
+##   aisle_id department_id
+## 1       61            19
+## 2      104            13
+## 3       94             7
+## 4       38             1
+## 5        5            13
+## 6       11            11
+\end{verbatim}
+
+To analyze each baasket items, it is necessary to know what items is in
+each basket/order. We just have \texttt{product\ id} in \texttt{orders}
+data but we can combine the two dataset on \texttt{product\_id} then
+group the data by \texttt{odrder\_id} to have \texttt{product\_name}
+together with \texttt{order\_id}.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Join the data on product_id}
+\NormalTok{df <-}\StringTok{ }\NormalTok{orders }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{inner_join}\NormalTok{(products, }\DataTypeTok{by =} \StringTok{"product_id"}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{group_by}\NormalTok{(order_id) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{summarise}\NormalTok{(}\DataTypeTok{basket =} \KeywordTok{as.vector}\NormalTok{(}\KeywordTok{list}\NormalTok{(product_name)))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# check the cleaned data}
+\KeywordTok{head}\NormalTok{(df)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## # A tibble: 6 x 2
+##   order_id basket    
+##      <int> <list>    
+## 1        2 <fct [9]> 
+## 2        3 <fct [8]> 
+## 3        4 <fct [13]>
+## 4        5 <fct [26]>
+## 5        6 <fct [3]> 
+## 6        7 <fct [2]>
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# convert dataframe to sparse matrix for further analysis}
+\NormalTok{df_tr <-}\StringTok{ }\KeywordTok{as}\NormalTok{(df}\OperatorTok{$}\NormalTok{basket, }\StringTok{"transactions"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# check how many transactions and items}
+\NormalTok{df_tr}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## transactions in sparse format with
+##  2966 transactions (rows) and
+##  8862 items (columns)
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# inspect first few transactions}
+\KeywordTok{inspect}\NormalTok{(}\KeywordTok{head}\NormalTok{(df_tr))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     items                                                    
+## [1] {All Natural No Stir Creamy Almond Butter,               
+##      Carrots,                                                
+##      Classic Blend Cole Slaw,                                
+##      Coconut Butter,                                         
+##      Garlic Powder,                                          
+##      Michigan Organic Kale,                                  
+##      Natural Sweetener,                                      
+##      Organic Egg Whites,                                     
+##      Original Unflavored Gelatine Mix}                       
+## [2] {Air Chilled Organic Boneless Skinless Chicken Breasts,  
+##      Lemons,                                                 
+##      Organic Baby Spinach,                                   
+##      Organic Ezekiel 49 Bread Cinnamon Raisin,               
+##      Organic Ginger Root,                                    
+##      Total 2% with Strawberry Lowfat Greek Strained Yogurt,  
+##      Unsweetened Almondmilk,                                 
+##      Unsweetened Chocolate Almond Breeze Almond Milk}        
+## [3] {Chewy 25% Low Sugar Chocolate Chip Granola,             
+##      Energy Drink,                                           
+##      Goldfish Cheddar Baked Snack Crackers,                  
+##      Honey/Lemon Cough Drops,                                
+##      Kellogg's Nutri-Grain Apple Cinnamon Cereal,            
+##      Kellogg's Nutri-Grain Blueberry Cereal,                 
+##      Nutri-Grain Soft Baked Strawberry Cereal Breakfast Bars,
+##      Oats & Chocolate Chewy Bars,                            
+##      Original Orange Juice,                                  
+##      Plain Pre-Sliced Bagels,                                
+##      Sugarfree Energy Drink,                                 
+##      Tiny Twists Pretzels,                                   
+##      Traditional Snack Mix}                                  
+## [4] {2% Reduced Fat Milk,                                    
+##      American Slices Cheese,                                 
+##      Apricot Preserves,                                      
+##      Artichokes,                                             
+##      Bag of Organic Bananas,                                 
+##      Bag of Organic Lemons,                                  
+##      Biscuits Orange Pim's,                                  
+##      Boneless Skinless Chicken Breast Fillets,               
+##      Clementines,                                            
+##      Dairy Milk Fruit & Nut Chocolate Bar,                   
+##      Everyday  Facial Tissues,                               
+##      French Lavender Hand Wash,                              
+##      Fresh Fruit Salad,                                      
+##      Just Crisp, Parmesan,                                   
+##      Macaroni And Cheese,                                    
+##      Matzos, Thin, Tea,                                      
+##      Meyer Lemon,                                            
+##      Mini Original Babybel Cheese,                           
+##      Natural Artesian Water, Mini & Mobile,                  
+##      One Ply Choose A Size Big Roll Paper Towel Rolls,       
+##      Organic Hass Avocado,                                   
+##      Organic Raspberries,                                    
+##      Original Black Box Tablewater Cracker,                  
+##      Sensitive Toilet Paper,                                 
+##      Spaghetti Pasta,                                        
+##      Wafer, Chocolate}                                       
+## [5] {Clean Day Lavender Scent Room Freshener Spray,          
+##      Cleanse,                                                
+##      Dryer Sheets Geranium Scent}                            
+## [6] {Orange Juice,                                           
+##      Pineapple Chunks}
+\end{verbatim}
+
+\hypertarget{explorary-data-analysis}{%
+\section{3. Explorary Data Analysis}\label{explorary-data-analysis}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Display the distribution of number of items per basket}
+\KeywordTok{hist}\NormalTok{(}\KeywordTok{size}\NormalTok{(df_tr), }\DataTypeTok{breaks =} \DecValTok{0}\OperatorTok{:}\DecValTok{80}\NormalTok{, }\DataTypeTok{xaxt =} \StringTok{"n"}\NormalTok{,}
+     \DataTypeTok{main =} \StringTok{"Number of Items per Basket"}\NormalTok{, }\DataTypeTok{xlab =} \StringTok{"Number of Items"}\NormalTok{, }\DataTypeTok{col =} \StringTok{"#00ADB5"}\NormalTok{)}
+\KeywordTok{axis}\NormalTok{(}\DataTypeTok{side =} \DecValTok{1}\NormalTok{, }\DataTypeTok{at =} \KeywordTok{seq}\NormalTok{(}\DecValTok{0}\NormalTok{, }\DecValTok{80}\NormalTok{, }\DataTypeTok{by =} \DecValTok{10}\NormalTok{), }\DataTypeTok{cex.axis =} \FloatTok{0.8}\NormalTok{) }\CommentTok{# set x-axis label}
+\KeywordTok{mtext}\NormalTok{(}\KeywordTok{paste}\NormalTok{(}\StringTok{"Total Baskets: "}\NormalTok{, }\KeywordTok{length}\NormalTok{(df_tr)), }\DataTypeTok{line =} \DecValTok{-1}\NormalTok{) }\CommentTok{# set sub-title}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-10-1.pdf}
+
+There are total 2966 baskets and the baskets with 2 to 9 items are most
+frequent. Customers seldom buy more than 20 items for a single order.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{itemFrequencyPlot}\NormalTok{(df_tr, }\DataTypeTok{topN =} \DecValTok{15}\NormalTok{, }\DataTypeTok{type =} \StringTok{"absolute"}\NormalTok{, }\DataTypeTok{col =} \StringTok{"#00ADB5"}\NormalTok{,}
+                  \DataTypeTok{main =} \StringTok{"Top 15 Most Frequent Items - Absolute"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-11-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{itemFrequencyPlot}\NormalTok{(df_tr, }\DataTypeTok{topN =} \DecValTok{15}\NormalTok{, }\DataTypeTok{type =} \StringTok{"relative"}\NormalTok{, }\DataTypeTok{col =} \StringTok{"#00ADB5"}\NormalTok{,}
+                  \DataTypeTok{main =} \StringTok{"Top 15 Most Frequent Items - Relative"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-12-1.pdf}
+
+It can be found that the top 15 most popular items are all fruits or
+vegetables. Banana and organic banana is most popular with support over
+0.10, then are Organic Strawberries, Organic Baby Spinach, Organic Hass
+Avocado and Organic Avocado with support higher than 0.05. Two thirds of
+the top 15 items are ogranic, marking organic food is very popular in
+North America.
+
+\hypertarget{association-rules-analysis}{%
+\section{4. Association Rules
+Analysis}\label{association-rules-analysis}}
+
+\hypertarget{the-most-frequent-bought-together-itemsets}{%
+\paragraph{4.1 The Most Frequent Bought-together
+Itemsets}\label{the-most-frequent-bought-together-itemsets}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# use apriori function to get most frequent itemsets}
+\NormalTok{ft_rules <-}\StringTok{ }\KeywordTok{apriori}\NormalTok{(df_tr, }\DataTypeTok{parameter =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{target =} \StringTok{"frequent itemsets"}\NormalTok{, }\DataTypeTok{supp =} \FloatTok{0.002}\NormalTok{, }\DataTypeTok{minlen =} \DecValTok{2}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##          NA    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen            target   ext
+##      10 frequent itemsets FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.03s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [930 set(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# inspect the rules by support from high to low}
+\KeywordTok{inspect}\NormalTok{(}\KeywordTok{sort}\NormalTok{(ft_rules, }\DataTypeTok{by =} \StringTok{"support"}\NormalTok{, }\DataTypeTok{decreasing =}\NormalTok{ T)[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{]) }\CommentTok{# top 10 itemsets}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##      items                                         support    count
+## [1]  {Bag of Organic Bananas,Organic Hass Avocado} 0.02090357 62   
+## [2]  {Banana,Organic Strawberries}                 0.01888065 56   
+## [3]  {Banana,Organic Avocado}                      0.01719488 51   
+## [4]  {Bag of Organic Bananas,Organic Strawberries} 0.01652057 49   
+## [5]  {Banana,Organic Baby Spinach}                 0.01550910 46   
+## [6]  {Bag of Organic Bananas,Organic Raspberries}  0.01483479 44   
+## [7]  {Banana,Honeycrisp Apple}                     0.01416049 42   
+## [8]  {Banana,Organic Fuji Apple}                   0.01348618 40   
+## [9]  {Bag of Organic Bananas,Organic Baby Spinach} 0.01314902 39   
+## [10] {Banana,Strawberries}                         0.01281187 38
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Plot the top 10 itemsets}
+\KeywordTok{plot}\NormalTok{(}\KeywordTok{sort}\NormalTok{(ft_rules, }\DataTypeTok{by =} \StringTok{"support"}\NormalTok{, }\DataTypeTok{decreasing =}\NormalTok{ T)[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{], }\DataTypeTok{method =} \StringTok{"graph"}\NormalTok{, }\DataTypeTok{control =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{cex=}\FloatTok{0.6}\NormalTok{), }\DataTypeTok{main =} \StringTok{"Top 10 Most Frequent Bought-Together Itemsets"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-14-1.pdf}
+
+The items in the top 10 most frequnet bought-together itemsets are all
+ranking top 15 popular items. More specificly, they are in type like
+``Banana/Organic Banana'' + ``another top 15 poplular item''. To dig
+deeper, wow we would like to know customers tend to purchase what items
+before and after buying bananas.
+
+\hypertarget{choice-of-support-and-confidence}{%
+\paragraph{4.2 Choice of Support and
+Confidence}\label{choice-of-support-and-confidence}}
+
+Before we move to create association rules, we need to choose
+appropriate support and confidence value. So we choose a list of support
+and confidence values. Because confidence shows how likely item X is
+purchased when item Y is purchased, we set it at least 0.65.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Support and confidence values}
+\NormalTok{support_levels <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\FloatTok{0.0035}\NormalTok{, }\FloatTok{0.003}\NormalTok{, }\FloatTok{0.0025}\NormalTok{, }\FloatTok{0.002}\NormalTok{)}
+\NormalTok{confidence_levels <-}\StringTok{ }\KeywordTok{seq}\NormalTok{(}\FloatTok{0.9}\NormalTok{, }\FloatTok{0.65}\NormalTok{, }\DataTypeTok{by =} \FloatTok{-0.05}\NormalTok{)}
+
+\CommentTok{# Create empty integers for each support level}
+\KeywordTok{library}\NormalTok{(hash)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## hash-2.2.6.1 provided by Decision Patterns
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{d <-}\StringTok{ }\KeywordTok{hash}\NormalTok{()}
+\NormalTok{k <-}\StringTok{ }\DecValTok{1}
+
+\CommentTok{# Calculate the number of rules under different support and confidence level}
+\ControlFlowTok{for}\NormalTok{(i }\ControlFlowTok{in}\NormalTok{ support_levels) \{}
+\NormalTok{  rules_count <-}\StringTok{ }\KeywordTok{integer}\NormalTok{(}\DataTypeTok{length =} \KeywordTok{length}\NormalTok{(confidence_levels))}
+  
+  \ControlFlowTok{for}\NormalTok{(j }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{length}\NormalTok{(confidence_levels)) \{}
+\NormalTok{    rules_count[j] <-}\StringTok{ }\KeywordTok{length}\NormalTok{(}\KeywordTok{apriori}\NormalTok{(df_tr, }\DataTypeTok{parameter =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{support=}\NormalTok{i, }\DataTypeTok{confidence=}\NormalTok{confidence_levels[j], }\DataTypeTok{target =} \StringTok{"rules"}\NormalTok{, }\DataTypeTok{minlen =} \DecValTok{2}\NormalTok{)))}
+\NormalTok{  \}}
+
+\NormalTok{  nam <-}\StringTok{ }\KeywordTok{paste}\NormalTok{(}\StringTok{"rules_supp_"}\NormalTok{, i, }\DataTypeTok{sep =} \StringTok{""}\NormalTok{)}
+  \KeywordTok{assign}\NormalTok{(nam, rules_count)}
+\NormalTok{  d[[}\KeywordTok{toString}\NormalTok{(k)]] <-}\StringTok{ }\NormalTok{rules_count}
+\NormalTok{  k <-}\StringTok{ }\NormalTok{k }\OperatorTok{+}\StringTok{ }\DecValTok{1}
+\NormalTok{\}}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.9    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.85    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.8    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.75    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.7    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.65    0.1    1 none FALSE            TRUE       5  0.0035      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 10 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [430 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.9    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.85    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.8    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.75    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.7    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.01s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.65    0.1    1 none FALSE            TRUE       5   0.003      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 8 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [579 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [2 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.9    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.85    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.8    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.01s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.75    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [0 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.7    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [1 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.65    0.1    1 none FALSE            TRUE       5  0.0025      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 7 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [671 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 done [0.00s].
+## writing ... [3 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.9    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [1 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.85    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [3 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.8    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [3 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.75    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [8 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.7    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [9 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##        0.65    0.1    1 none FALSE            TRUE       5   0.002      2
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.02s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [17 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# combine the four datasets with different support level}
+\NormalTok{num_rules <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(d[[}\StringTok{"1"}\NormalTok{]], d[[}\StringTok{"2"}\NormalTok{]], d[[}\StringTok{"3"}\NormalTok{]], d[[}\StringTok{"4"}\NormalTok{]], confidence_levels)}
+
+\CommentTok{# plot the rules numbers in different support and confidence levels}
+\KeywordTok{ggplot}\NormalTok{(num_rules, }\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x =}\NormalTok{ confidence_levels)) }\OperatorTok{+}
+\StringTok{    }
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"1"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{1}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"1"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{1}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"2"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{2}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"2"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{2}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"3"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{3}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"3"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{3}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{geom_line}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"4"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{4}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }\KeywordTok{geom_point}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{y =}\NormalTok{ d[[}\StringTok{"4"}\NormalTok{]], }\DataTypeTok{color =} \KeywordTok{paste}\NormalTok{(}\StringTok{"Support level of"}\NormalTok{, support_levels[}\DecValTok{4}\NormalTok{]))) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{scale_x_continuous}\NormalTok{(}\DataTypeTok{breaks =} \KeywordTok{seq}\NormalTok{(}\FloatTok{0.65}\NormalTok{, }\FloatTok{0.9}\NormalTok{, }\DataTypeTok{by =} \FloatTok{0.05}\NormalTok{), }\CommentTok{# label the confidence values}
+                     \DataTypeTok{labels =} \KeywordTok{seq}\NormalTok{(}\FloatTok{0.65}\NormalTok{, }\FloatTok{0.9}\NormalTok{, }\DataTypeTok{by =} \FloatTok{0.05}\NormalTok{)) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{title =} \StringTok{"Number of Rules by Support & Confidence"}\NormalTok{,}
+       \DataTypeTok{x =} \StringTok{"Confidence"}\NormalTok{, }\DataTypeTok{y =} \StringTok{"Count"}\NormalTok{) }\OperatorTok{+}
+\StringTok{  }
+\StringTok{  }\KeywordTok{theme_bw}\NormalTok{() }\OperatorTok{+}\StringTok{ }\CommentTok{# set theme to blankwhite}
+\StringTok{  }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{legend.title =} \KeywordTok{element_blank}\NormalTok{())}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-17-1.pdf}
+
+To ensure enough rules for analysis, we choose
+\texttt{support\ =\ 0.002} and \texttt{confidence\ =\ 0.7} to create
+association rules, as it have about 9 rules under this condition.
+
+\hypertarget{what-items-would-customers-purchase-before-buying-banana}{%
+\paragraph{4.3 What Items Would Customers Purchase Before Buying
+Banana?}\label{what-items-would-customers-purchase-before-buying-banana}}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# create association rules with support 0.002, confidence 0.65}
+\NormalTok{rules_}\DecValTok{1}\NormalTok{ <-}\StringTok{ }\KeywordTok{apriori}\NormalTok{(df_tr, }\DataTypeTok{parameter =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{supp =} \FloatTok{0.002}\NormalTok{, }\DataTypeTok{conf =} \FloatTok{0.7}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Apriori
+## 
+## Parameter specification:
+##  confidence minval smax arem  aval originalSupport maxtime support minlen
+##         0.7    0.1    1 none FALSE            TRUE       5   0.002      1
+##  maxlen target   ext
+##      10  rules FALSE
+## 
+## Algorithmic control:
+##  filter tree heap memopt load sort verbose
+##     0.1 TRUE TRUE  FALSE TRUE    2    TRUE
+## 
+## Absolute minimum support count: 5 
+## 
+## set item appearances ...[0 item(s)] done [0.00s].
+## set transactions ...[8862 item(s), 2966 transaction(s)] done [0.01s].
+## sorting and recoding items ... [1000 item(s)] done [0.00s].
+## creating transaction tree ... done [0.00s].
+## checking subsets of size 1 2 3 4 done [0.01s].
+## writing ... [9 rule(s)] done [0.00s].
+## creating S4 object  ... done [0.00s].
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{inspect}\NormalTok{(rules_}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     lhs                                              rhs                                           support confidence       lift count
+## [1] {Blueberry on the Bottom Nonfat Greek Yogurt} => {Peach on the Bottom Nonfat Greek Yogurt} 0.002022927  0.8571429 181.591837     6
+## [2] {Frozen Organic Wild Blueberries,                                                                                                 
+##      Organic Hass Avocado}                        => {Bag of Organic Bananas}                  0.002022927  0.7500000   6.012162     6
+## [3] {100% Whole Wheat Bread,                                                                                                          
+##      Organic Raspberries}                         => {Bag of Organic Bananas}                  0.002022927  1.0000000   8.016216     6
+## [4] {Organic Baby Arugula,                                                                                                            
+##      Original Hummus}                             => {Bag of Organic Bananas}                  0.002022927  0.7500000   6.012162     6
+## [5] {Organic Blackberries,                                                                                                            
+##      Organic Hass Avocado}                        => {Bag of Organic Bananas}                  0.002022927  0.8571429   6.871042     6
+## [6] {Organic Granny Smith Apple,                                                                                                      
+##      Organic Hass Avocado}                        => {Bag of Organic Bananas}                  0.002022927  0.7500000   6.012162     6
+## [7] {Organic Avocado,                                                                                                                 
+##      Organic Cilantro}                            => {Organic Strawberries}                    0.002360081  0.7777778   9.572153     7
+## [8] {Organic Cucumber,                                                                                                                
+##      Organic Raspberries}                         => {Bag of Organic Bananas}                  0.002697235  0.7272727   5.829975     8
+## [9] {Honeycrisp Apple,                                                                                                                
+##      Limes}                                       => {Banana}                                  0.002360081  0.7777778   4.971743     7
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# filter and sort the rules with "Banana" in right hand side}
+\NormalTok{bf_bnn <-}\StringTok{ }\KeywordTok{sort}\NormalTok{(}\KeywordTok{subset}\NormalTok{(rules_}\DecValTok{1}\NormalTok{, }\DataTypeTok{subset =}\NormalTok{ rhs }\OperatorTok{%pin%}\StringTok{ "Banana"}\NormalTok{), }\DataTypeTok{by =} \StringTok{"confidence"}\NormalTok{, }\DataTypeTok{decreasing =}\NormalTok{ T)}
+\KeywordTok{inspect}\NormalTok{(bf_bnn)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     lhs                                  rhs                          support confidence     lift count
+## [1] {100% Whole Wheat Bread,                                                                           
+##      Organic Raspberries}             => {Bag of Organic Bananas} 0.002022927  1.0000000 8.016216     6
+## [2] {Organic Blackberries,                                                                             
+##      Organic Hass Avocado}            => {Bag of Organic Bananas} 0.002022927  0.8571429 6.871042     6
+## [3] {Honeycrisp Apple,                                                                                 
+##      Limes}                           => {Banana}                 0.002360081  0.7777778 4.971743     7
+## [4] {Frozen Organic Wild Blueberries,                                                                  
+##      Organic Hass Avocado}            => {Bag of Organic Bananas} 0.002022927  0.7500000 6.012162     6
+## [5] {Organic Baby Arugula,                                                                             
+##      Original Hummus}                 => {Bag of Organic Bananas} 0.002022927  0.7500000 6.012162     6
+## [6] {Organic Granny Smith Apple,                                                                       
+##      Organic Hass Avocado}            => {Bag of Organic Bananas} 0.002022927  0.7500000 6.012162     6
+## [7] {Organic Cucumber,                                                                                 
+##      Organic Raspberries}             => {Bag of Organic Bananas} 0.002697235  0.7272727 5.829975     8
+\end{verbatim}
+
+As we can see from the result, there are total 9 rules and 7 of the 9
+are with \texttt{Banana} on right hand side. Let's plot the them.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot}\NormalTok{(bf_bnn, }\DataTypeTok{method =} \StringTok{"graph"}\NormalTok{, }\DataTypeTok{control =} \KeywordTok{list}\NormalTok{(}\DataTypeTok{cex=}\FloatTok{0.5}\NormalTok{), }
+     \DataTypeTok{main =} \StringTok{"The Items Customers likely Purchase Before Buying Banana"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{association_rules_project_Ricky_files/figure-latex/unnamed-chunk-21-1.pdf}
+
+From above data and plot, we can find that: 1. Customers buying
+\texttt{Honeycrisp\ Apple} and \texttt{Limes} are very likely to buy
+\texttt{Banana}; 2. Customers buying organic fruit including
+\texttt{Avocado}, \texttt{Blackberries} etc are very likely to purchase
+\texttt{Organic\ Banana}; 3. All the time customers buying
+\texttt{100\%\ Whole\ Wheat\ Bread}, \texttt{Organic\ Raspberries},
+customers finally purchase \texttt{Organic\ Banana}. If this is not
+single customer's behavior, we can recommend \texttt{Banana} after
+customers add \texttt{100\%\ Whole\ Wheat\ Bread},
+\texttt{Organic\ Raspberries} to cart.
+
+\hypertarget{other-high-confidence-rules}{%
+\paragraph{4.4 Other High-Confidence
+Rules}\label{other-high-confidence-rules}}
+
+As there are no rules from our model with \texttt{Banana} on left hand
+side, we move to analyze other rules without \texttt{Banan} from the
+model.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# filter the rules without Banana on rhs}
+\NormalTok{other_rule <-}\StringTok{ }\KeywordTok{sort}\NormalTok{(}\KeywordTok{subset}\NormalTok{(rules_}\DecValTok{1}\NormalTok{, }\OperatorTok{!}\NormalTok{(rhs }\OperatorTok{%pin%}\StringTok{ "Banana"}\NormalTok{)), }\DataTypeTok{by =} \StringTok{"confidence"}\NormalTok{, }\DataTypeTok{decreasing =}\NormalTok{ T)}
+\KeywordTok{inspect}\NormalTok{(other_rule)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     lhs                                              rhs                                           support confidence       lift count
+## [1] {Blueberry on the Bottom Nonfat Greek Yogurt} => {Peach on the Bottom Nonfat Greek Yogurt} 0.002022927  0.8571429 181.591837     6
+## [2] {Organic Avocado,                                                                                                                 
+##      Organic Cilantro}                            => {Organic Strawberries}                    0.002360081  0.7777778   9.572153     7
+\end{verbatim}
+
+We got another 2 rules that could be used for recommendation system.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# List all the 9 rules by confidence level from high to low}
+\NormalTok{selected_rules <-}\StringTok{ }\KeywordTok{DATAFRAME}\NormalTok{(rules_}\DecValTok{1}\NormalTok{) }\OperatorTok{%>%}
+\StringTok{  }\KeywordTok{arrange}\NormalTok{(}\KeywordTok{desc}\NormalTok{(confidence))}
+\NormalTok{recomm <-}\StringTok{ }\KeywordTok{paste}\NormalTok{(selected_rules}\OperatorTok{$}\NormalTok{LHS, }\StringTok{"=>"}\NormalTok{, selected_rules}\OperatorTok{$}\NormalTok{RHS)}
+\end{Highlighting}
+\end{Shaded}
+
+\hypertarget{conclusion}{%
+\section{5. Conclusion}\label{conclusion}}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \texttt{Banana},\texttt{Bag\ of\ Organic\ Bananas},
+  \texttt{Organic\ Straberries}, \texttt{Organic\ Baby\ Spinach},
+  \texttt{Organic\ Hass\ Avocado} and \texttt{Organic\ Avocado} are most
+  frequent items with support value higher than 0.05.
+\item
+  To boost the sales, we can build the recommendations with below rules:
+\end{enumerate}
+
+\begin{verbatim}
+## [1] "{100% Whole Wheat Bread,Organic Raspberries} => {Bag of Organic Bananas}"                  
+## [2] "{Blueberry on the Bottom Nonfat Greek Yogurt} => {Peach on the Bottom Nonfat Greek Yogurt}"
+## [3] "{Organic Blackberries,Organic Hass Avocado} => {Bag of Organic Bananas}"                   
+## [4] "{Organic Avocado,Organic Cilantro} => {Organic Strawberries}"                              
+## [5] "{Honeycrisp Apple,Limes} => {Banana}"                                                      
+## [6] "{Frozen Organic Wild Blueberries,Organic Hass Avocado} => {Bag of Organic Bananas}"        
+## [7] "{Organic Baby Arugula,Original Hummus} => {Bag of Organic Bananas}"                        
+## [8] "{Organic Granny Smith Apple,Organic Hass Avocado} => {Bag of Organic Bananas}"             
+## [9] "{Organic Cucumber,Organic Raspberries} => {Bag of Organic Bananas}"
+\end{verbatim}
+
+
+\end{document}

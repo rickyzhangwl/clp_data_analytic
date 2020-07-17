@@ -1,0 +1,172 @@
+---
+title: "Time Series Practice"
+output: html_notebook
+---
+# Source and manage
+```{r, warning=FALSE}
+# Load libraries
+library(ggfortify) # library for time seires visualization
+library(tseries) # time series analysis package
+library(forecast) # forcasting function for time series model
+```
+
+```{r}
+# Load data
+data(AirPassengers)
+df <- AirPassengers
+```
+
+# Explore and transform
+```{r}
+# check the first few rows
+head(df, 20)
+```
+
+```{r}
+# check if it is time series data
+is.ts(df)
+```
+
+```{r}
+# check if there is missing values
+any(is.na(df))
+```
+
+```{r}
+# check how frequently the time series data is collected
+frequency(df)
+```
+
+```{r}
+summary(df)
+```
+
+```{r}
+autoplot(df)
+```
+
+```{r}
+ts_plot_season <- function(x = x) {
+season <- cycle(x)
+season.factor <- factor(season)
+ggplot() + 
+  geom_boxplot(mapping = aes(x = season.factor,
+                             y = x)) +
+  labs(x = "Month", y =  "Passengers (in thousands)")
+}
+
+ts_plot_season(df)
+```
+
+# Decomposition
+A given time series is thought to consist of three systematic components including level, trend, seasonality, and one non-systematic component called noise.
+
+These components are defined as follows:
+- Level: The average value in the series.
+- Trend: The increasing or decreasing value in the series.
+- Seasonality: The repeating short-term cycle in the series.
+- Noise: The random variation in the series
+
+
+An additive model is linear where changes over time are consistently made by the same amount.
+A multiplicative model is nonlinear, such as quadratic or exponential. Changes increase or decrease over time
+
+Reviewing the line plot of Air Passenger data, it suggests that there may be a linear trend, but it is hard to be sure from eye-balling. There is also seasonality, but the amplitude (height) of the cycles appears to be increasing, suggesting that it is multiplicative.
+
+```{r}
+decomposed_df <- decompose(df, type = "multiplicative")
+
+autoplot(decomposed_df)
+```
+
+# Model and transform
+## Testing for stationarity
+Stationarity means your time series's mean and variance is constant.
+
+A stationary time series has a mean reverting behaviour.. means if it goes above your mean, it will come back towards mean and similar for downward.
+
+To make a non stationary time series stationary.. you have to difference it until you see a mean reverting behaviour.
+
+
+Mathematically, a stationary time series will have a constant:
+
+- mean
+- variance
+- covariance
+
+To test for stationarity, we can run a simple KPSS test. This test assumes a null hypothesis that a time series is stationary. That means, if the p-value of the test is less than 0.05, we can reject this hypothesis and assume the data is not stationary.
+
+```{r}
+kpss.test(df)
+```
+
+In this case, our p-value is less than 0.05, meaning we should reject the null hypothesis. *Our data is not stationary.*
+
+We need to do some transformations to make our data stationary.
+
+```{r}
+plot(df)
+abline(reg=lm(df~time(df)))
+```
+
+```{r}
+plot(log(df))
+abline(reg=lm(log(df)~time(log(df))))
+```
+
+```{r}
+plot(diff(log(df)))
+abline(reg=lm(diff(log(df))~time(diff(log(df)))))
+```
+
+```{r}
+kpss.test(diff(log(df)))
+```
+
+# ARIMA Model
+ARIMA stands for Autoregressive Integrated Moving Average models. Univariate (single vector) ARIMA is a forecasting technique that projects the future values of a series based entirely on its own inertia.
+
+```{r}
+model <- auto.arima(log(df))
+model
+```
+
+```{r}
+plot(exp(model$x), col = "red")
+lines(exp(model$fitted), col = "blue")
+```
+
+```{r}
+forecast <- forecast(model, h=24)
+plot(forecast)
+```
+
+```{r}
+exp(forecast$mean)
+```
+```{r}
+forecast$fitted
+```
+
+```{r}
+hk <- read_csv("hk_electricity.csv")
+
+head(hk)
+```
+
+```{r}
+ts_hk <- as.ts(hk, )
+```
+
+```{r}
+is.ts(ts_hk)
+```
+
+```{r}
+head(ts_hk)
+```
+
+```{r}
+adf.test(df)
+```
+
