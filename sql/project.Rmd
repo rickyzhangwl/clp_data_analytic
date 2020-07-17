@@ -178,7 +178,7 @@ ORDER BY 1, 3 DESC;
 # check the result
 top_products
 ```
-We can see that the company has a catalogue of **109** products. Now let's make a scatter plot to visualize the table, with a filter function for different procutlines.
+We can see that the company has a catalogue of **109** products. Now let's make a scatter plot to visualize the table, with a filter function for different procut lines.
 
 ```{r}
 # plot the product sales and stock
