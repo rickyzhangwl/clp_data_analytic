@@ -53,8 +53,8 @@ con <- DBI::dbConnect(odbc(),
                  Driver = "ODBC Driver 17 for SQL Server",
                  Server = "aseaspdghrtrain.database.windows.net",
                  Database = "asdb-eas-pd-ghrtrain01",
-                 UID = "RZ15912",  # use your own userID
-                 PWD = "D7!zUi*#", # use your own password
+                 UID = "xxxx",  # use your own userID
+                 PWD = "xxxx", # use your own password
                  PORT = 1433)
 
 # Check the connection
