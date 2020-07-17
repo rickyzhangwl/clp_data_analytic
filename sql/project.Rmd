@@ -181,6 +181,7 @@ top_products
 We can see that the company has a catalogue of **109** products. Now let's make a scatter plot to visualize the table, with a filter function for different procutlines.
 
 ```{r}
+# plot the product sales and stock
 fig3 <- plot_ly(data = top_products, x = ~salesQuantity, y = ~stockQuantity, 
                color = ~productLine, colors = "Paired",
                type = "scatter",
@@ -189,6 +190,7 @@ fig3 <- plot_ly(data = top_products, x = ~salesQuantity, y = ~stockQuantity,
                hovertemplate = "%{text}<br>Order Qty: %{x}<br>Stock Qty: %{y}<extra></extra>",
                width = 750,
                height = 450,
+               # add a filter
                transforms = list(
                                 list(
                                   type = 'filter',
@@ -196,7 +198,7 @@ fig3 <- plot_ly(data = top_products, x = ~salesQuantity, y = ~stockQuantity,
                                   operation = '=',
                                   value = unique(top_products$productLine))
                ))
-
+# add dropdown list for the filter
 fig3 <- fig3 %>% 
             layout(
               title = "Sales and Stock of Products",
@@ -316,7 +318,7 @@ employee_rank
 ```
 
 ```{r}
-# Plot the ordered quantity of different product lines
+# Plot the sales of different sales reps
 fig4 <- plot_ly(data = employee_rank, y = ~reorder(subordinateName, sales),
                 x = ~sales,
                 color = ~managerName,
