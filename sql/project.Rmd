@@ -6,17 +6,17 @@ output: html_notebook
 
 # 1. Discovery
 
-This article is to analyze the sales data of a model kit provider. Their product line consists of model ships, planes, cars and military ground vehicles. I will access the data by creating connection to the database.
+This article is to analyze the sales data of a model kit provider. Their product line consists of model ships, planes, cars and military ground vehicles. I will access the data by creating a connection to the database.
 
-As the sales data including the information of customers, orders, products, productlines and the company employees, I will answer **below business problems** in this article, so that the management could better understand the company's business status.
+As the sales data including the information of customers, orders, products, product lines and the company employees, I will answer **below business problems** in this article, so that the management could better understand the company's business status.
 
-1. How is the sales of each productline?
+1. How is the sales of each product line?
 
 2. What's the ordered quantity and stock quantity of each product?
 
 3. As we have regional managers, what's the sales of the employees under each manager?
 
-I will use advanced sql funcions such as subquery, OLAP, window function to answer.
+I will use advanced SQL functions such as subquery, OLAP, window function to answer.
 
 # 2. Data Preparation
 
@@ -239,9 +239,9 @@ fig3 <- fig3 %>%
 fig3
 ```
 
-We see an outlier! By checking the hovertext, we can know it is **1992 Ferrari 360 Spider Red**. It is so popular as only this classic car has an ordered quantity over 1800, while all of other products are sold with a number between 767 and 1111. Besides, we don't have a product with very low ordered quantity.
+We see an outlier! By checking the hovertext, we can know it is **1992 Ferrari 360 Spider Red**. It is so popular as only this classic car has an ordered quantity over 1800, while all of the other products are sold with a number between 767 and 1111. Besides, we don't have a product with very low ordered quantity.
 
-By the filter, we can see that the **Train** productline only has 3 products. This is the contributing factor to its low sales.
+By the filter, we can see that the **Train** product line only has 3 products. This is the contributing factor to its low sales.
 
 In this plot, we can find the products with **low stock** (less than 200), they are: 
 
@@ -275,7 +275,7 @@ CREATE VIEW supSub_rz AS
 SELECT * 
 FROM supSub_rz
 ```
-That's it! The company has 22 employees in total, 1 President, 1 VP Sales. 3 Regional Sales Manger and 1 Sales Rep directly report to the VP Sales. The four guys also have their subordinates reporting to them.
+That's it! The company has 22 employees in total, 1 President, 1 VP Sales. 3 Regional Sales Manager and 1 Sales Rep directly report to the VP Sales. The four guys also have their subordinates reporting to them.
 
 Now let's write a query with OLAP function `ROLLUP` to return the sales number of each manager and their subordinates.
 
@@ -342,11 +342,11 @@ In this plot, we can clearly see the sales of each sales rep. The sales of each 
 
 # 4. Conclusion
 
-From above analysis, we can conclude that:
+From the above analysis, we can conclude that:
 
-1. Classic cars and Vintage cars are the company's biggest product lines as both have much more sales than others. Trains is the smallest one, largely because of the low number of available products. The company should keep maintaining the good sales of car products. Developing more products in Trains can probably increase the sales of this productline.
+1. Classic cars and Vintage cars are the company's biggest product lines as both have much more sales than others. Trains is the smallest one, largely because of the low number of available products. The company should keep maintaining the good sales of car products. Developing more products in Trains can probably increase the sales of this product line.
 
-2. The 1992 Ferrari 360 Spider Red is the company's flagship product. The company can make further analysis on the success of this product. The experience and marketing strategy is possible to be applied for other products. The company should pay attention to the 4 low-stock products, stock replenishment is necessary in case they cannot fulfill orders in the near future.
+2. The 1992 Ferrari 360 Spider Red is the company's flagship product. The company can make further analysis on the success of this product. The experience and marketing strategy is possible to be applied to other products. The company should pay attention to the 4 low-stock products, stock replenishment is necessary in case they cannot fulfill orders in the near future.
 
-3. The company's top sales rep are almost for the EMEA and NA region. But some sales with the lowest sales number are also in the two region. The company can further analyze the sales detail of each sales rep to better understand their performance.
+3. The company's top sales reps are almost for the EMEA and NA region. But some sales with the lowest sales number are also in the two regions. The company can further analyze the sales detail of each sales rep to better understand their performance.
 
